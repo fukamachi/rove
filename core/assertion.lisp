@@ -1,10 +1,9 @@
 (in-package #:cl-user)
 (defpackage #:rove/core/assertion
-  (:use #:cl)
-  (:import-from #:rove/core/conditions
-                #:passed
-                #:failed)
+  (:use #:cl
+        #:rove/core/conditions)
   (:export #:is
+           #:isnt
            #:ok
            #:pass
            #:fail))
@@ -42,6 +41,27 @@
                  :reason ,reason
                  :desc ,desc)
          ,result))))
+
+(defmacro isnt (form &optional desc)
+  `(handler-case (is ,form)
+     (passed (e)
+       (if (assertion-reason e)
+           (signal e)
+           (signal 'failed
+                   :form `(not ,(assertion-form e))
+                   :steps (assertion-steps e)
+                   :args (assertion-args e)
+                   :values (assertion-values e)
+                   :desc ,desc)))
+     (failed (e)
+       (if (assertion-reason e)
+           (signal e)
+           (signal 'passed
+                   :form `(not ,(assertion-form e))
+                   :steps (assertion-steps e)
+                   :args (assertion-args e)
+                   :values (assertion-values e)
+                   :desc ,desc)))))
 
 (defmacro ok (form &optional desc)
   (let ((result (gensym "RESULT")))

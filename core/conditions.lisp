@@ -4,8 +4,12 @@
   (:export #:assertion
            #:passed
            #:failed
-           #:assertion-description
+           #:assertion-form
+           #:assertion-steps
+           #:assertion-args
+           #:assertion-values
            #:assertion-reason
+           #:assertion-description
            #:assertion-detailed-report
 
            #:test-begin
@@ -23,13 +27,17 @@
 (in-package #:rove/core/conditions)
 
 (define-condition assertion ()
-  ((form :initarg :form)
+  ((form :initarg :form
+         :reader assertion-form)
    (steps :initarg :steps
-          :initform nil)
+          :initform nil
+          :reader assertion-steps)
    (args :initarg :args
-         :initform nil)
+         :initform nil
+         :reader assertion-args)
    (values :initarg :values
-           :initform nil)
+           :initform nil
+           :reader assertion-values)
    (reason :initarg :reason
            :initform nil
            :reader assertion-reason)

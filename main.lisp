@@ -4,6 +4,7 @@
   (:use #:cl)
   (:import-from #:rove/core/assertion
                 #:is
+                #:isnt
                 #:ok
                 #:pass
                 #:fail)
@@ -19,6 +20,7 @@
   (:import-from #:rove/reporter/style/spec
                 #:spec-reporter)
   (:export #:is
+           #:isnt
            #:ok
            #:pass
            #:fail
