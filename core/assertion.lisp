@@ -2,9 +2,8 @@
 (defpackage #:rove/core/assertion
   (:use #:cl
         #:rove/core/conditions)
-  (:export #:is
-           #:isnt
-           #:ok
+  (:export #:ok
+           #:ng
            #:pass
            #:fail))
 (in-package #:rove/core/assertion)
@@ -16,7 +15,7 @@
          (cons step-form steps))
       (push step-form steps))))
 
-(defmacro is (form &optional desc)
+(defmacro ok (form &optional desc)
   (check-type form cons)
   (let* ((steps (form-steps form))
          (expanded-form (first steps)))
@@ -42,8 +41,8 @@
                  :desc ,desc)
          ,result))))
 
-(defmacro isnt (form &optional desc)
-  `(handler-case (is ,form)
+(defmacro ng (form &optional desc)
+  `(handler-case (ok ,form)
      (passed (e)
        (if (assertion-reason e)
            (signal e)
@@ -62,16 +61,6 @@
                    :args (assertion-args e)
                    :values (assertion-values e)
                    :desc ,desc)))))
-
-(defmacro ok (form &optional desc)
-  (let ((result (gensym "RESULT")))
-    `(let ((,result ,form))
-       (signal (if ,result
-                   'passed
-                   'failed)
-               :form ',form
-               :desc ,desc)
-       ,result)))
 
 (defun pass (desc)
   (signal 'passed

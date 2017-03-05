@@ -3,9 +3,8 @@
   (:nicknames #:rove)
   (:use #:cl)
   (:import-from #:rove/core/assertion
-                #:is
-                #:isnt
                 #:ok
+                #:ng
                 #:pass
                 #:fail)
   (:import-from #:rove/core/test
@@ -19,9 +18,8 @@
                 #:*enable-colors*)
   (:import-from #:rove/reporter/style/spec
                 #:spec-reporter)
-  (:export #:is
-           #:isnt
-           #:ok
+  (:export #:ok
+           #:ng
            #:pass
            #:fail
            #:deftest
