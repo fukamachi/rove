@@ -63,9 +63,10 @@
               (run-package-tests package))))
 
         #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
+        #-quicklisp
         (let ((*error-output* (make-broadcast-stream))
               (*standard-output* (make-broadcast-stream)))
-          (asdf:load-system system :force t))
+          (asdf:load-system system))
 
         (let ((main-package (find-package (string-upcase (asdf:component-name system)))))
           (when (package-tests main-package)
