@@ -16,7 +16,7 @@
 (defun make-reporter (style &key (stream *report-stream*))
   (let* ((package-name
            (format nil "~A/~A"
-                   '#:rove/reporter/style
+                   '#:rove/reporter
                    style))
          (package (find-package package-name)))
     (unless package

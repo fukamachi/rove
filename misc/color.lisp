@@ -1,10 +1,10 @@
 (in-package #:cl-user)
-(defpackage #:rove/reporter/color
+(defpackage #:rove/misc/color
   (:use #:cl)
   (:import-from #:uiop
                 #:getenv)
   (:export #:color-text))
-(in-package #:rove/reporter/color)
+(in-package #:rove/misc/color)
 
 (defvar *enable-colors*
   (not

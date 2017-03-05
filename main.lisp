@@ -16,9 +16,9 @@
   (:import-from #:rove/reporter
                 #:with-reporter
                 #:*report-stream*)
-  (:import-from #:rove/reporter/color
+  (:import-from #:rove/misc/color
                 #:*enable-colors*)
-  (:import-from #:rove/reporter/style/spec
+  (:import-from #:rove/reporter/spec
                 #:spec-reporter)
   (:export #:ok
            #:ng

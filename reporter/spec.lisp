@@ -1,12 +1,12 @@
 (in-package #:cl-user)
-(defpackage #:rove/reporter/style/spec
+(defpackage #:rove/reporter/spec
   (:use #:cl
         #:rove/core/conditions
         #:rove/reporter
-        #:rove/reporter/stream
-        #:rove/reporter/color)
+        #:rove/misc/stream
+        #:rove/misc/color)
   (:export #:spec-reporter))
-(in-package #:rove/reporter/style/spec)
+(in-package #:rove/reporter/spec)
 
 (defclass spec-reporter (reporter) ())
 

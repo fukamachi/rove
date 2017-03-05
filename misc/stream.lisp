@@ -1,11 +1,11 @@
 (in-package #:cl-user)
-(defpackage #:rove/reporter/stream
+(defpackage #:rove/misc/stream
   (:use #:cl
         #:trivial-gray-streams)
   (:export #:make-indent-stream
            #:stream-indent-level
            #:with-indent))
-(in-package #:rove/reporter/stream)
+(in-package #:rove/misc/stream)
 
 (defclass indent-stream (trivial-gray-stream-mixin
                          fundamental-character-output-stream)
