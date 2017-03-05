@@ -5,6 +5,7 @@
   (:import-from #:rove/core/assertion
                 #:ok
                 #:ng
+                #:signals
                 #:pass
                 #:fail)
   (:import-from #:rove/core/test
@@ -20,6 +21,7 @@
                 #:spec-reporter)
   (:export #:ok
            #:ng
+           #:signals
            #:pass
            #:fail
            #:deftest

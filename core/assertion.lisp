@@ -4,6 +4,7 @@
         #:rove/core/conditions)
   (:export #:ok
            #:ng
+           #:signals
            #:pass
            #:fail))
 (in-package #:rove/core/assertion)
@@ -61,6 +62,13 @@
                    :args (assertion-args e)
                    :values (assertion-values e)
                    :desc ,desc)))))
+
+(defmacro signal-of (form)
+  `(handler-case (progn ,form nil)
+     (condition (c) c)))
+
+(defmacro signals (form condition)
+  `(typep (signal-of ,form) ,condition))
 
 (defun pass (desc)
   (signal 'passed
