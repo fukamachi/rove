@@ -1,0 +1,32 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| Run tests with Rove.
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  (ql:quickload '(:rove) :silent t))
+
+(defpackage :ros.script.roswell/rove.3697685121
+  (:use :cl))
+(in-package :ros.script.roswell/rove.3697685121)
+
+(defun main (target &rest argv)
+  (declare (ignore argv))
+  (let ((file (probe-file target)))
+    (unless file
+      (format *error-output* "~&Error: ~A not found.~%" target)
+      (uiop:quit -1))
+    (or (rove:run
+         (cond
+           ((equal (pathname-type file) "lisp")
+            (let ((*print-case* :downcase))
+              (princ-to-string
+               (second (asdf/package-inferred-system::file-defpackage-form file)))))
+           ((equal (pathname-type file) "asd")
+            (pathname-name file))
+           (t
+            (format *error-output* "~&Error: Invalid file type.~%")
+            (uiop:quit -1))))
+        (uiop:quit -1))))
+;;; vim: set ft=lisp lisp:
