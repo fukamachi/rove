@@ -67,7 +67,7 @@
   `(handler-case (progn ,form nil)
      (condition (c) c)))
 
-(defmacro signals (form condition)
+(defmacro signals (form &optional (condition 'error))
   `(typep (signal-of ,form) ,condition))
 
 (defun pass (desc)
