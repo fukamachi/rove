@@ -53,24 +53,32 @@
 
               #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
 
-              (let ((*error-output* (make-broadcast-stream))
-                    (*standard-output* (make-broadcast-stream)))
-                (asdf:load-system dep :force t))
+              (dolist (c (asdf:component-children dep))
+                (when (typep c 'asdf:cl-source-file)
+                  (load (asdf:component-pathname c) :verbose t)))
 
               (unless package
                 (or (setf package (find-package package-name))
                     (error "Package ~A not found" package-name)))
               (run-package-tests package))))
 
-        #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
-        #-quicklisp
-        (let ((*error-output* (make-broadcast-stream))
-              (*standard-output* (make-broadcast-stream)))
-          (asdf:load-system system))
+        (let* ((package-name (string-upcase (asdf:component-name system)))
+               (package (find-package  package-name)))
+          (when package
+            (clear-package-tests package))
 
-        (let ((main-package (find-package (string-upcase (asdf:component-name system)))))
-          (when (package-tests main-package)
-            (run-package-tests main-package))))
+          #+quicklisp (ql:quickload package-name :silent t)
+
+          ;; Loading CL-SOURCE-FILE
+          (dolist (c (asdf:component-children system))
+            (when (typep c 'asdf:cl-source-file)
+              (load (asdf:component-pathname c) :verbose t)))
+
+          (unless package
+            (or (setf package (find-package package-name))
+                (error "Package ~A not found" package-name)))
+          (when (package-tests package)
+            (run-package-tests package))))
 
       (values (not failed)
               (nreverse passed)
