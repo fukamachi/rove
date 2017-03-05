@@ -7,7 +7,7 @@
            #:with-reporter))
 (in-package #:rove/reporter)
 
-(defvar *report-stream* (make-synonym-stream '*error-output*))
+(defvar *report-stream* (make-synonym-stream '*standard-output*))
 
 (defclass reporter ()
   ((stream :initarg :stream
