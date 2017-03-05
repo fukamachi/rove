@@ -44,13 +44,21 @@
    (desc :initarg :desc
          :initform nil)))
 
+(defun form-description (form values)
+  (destructuring-bind (test-fn &rest args) form
+    (case test-fn
+      (cl:typep (format nil "Expect ~A to be an instance of ~A."
+                        (first args)
+                        (second values)))
+      (cl:not (format nil "Expect ~A to be false." (first args)))
+      (otherwise (format nil "Expect ~A to be true." form)))))
+
 (defun assertion-description (assertion)
-  (with-slots (desc form) assertion
+  (with-slots (desc form values) assertion
     (or desc
         ;; Default description
         ;; TODO: This can be more human-friendly.
-        (let ((*print-pretty* nil))
-          (format nil "Assertion ~A" form)))))
+        (form-description form values))))
 
 (define-condition passed (assertion) ()
   (:report
