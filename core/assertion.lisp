@@ -5,6 +5,7 @@
   (:export #:ok
            #:ng
            #:signals
+           #:outputs
            #:pass
            #:fail))
 (in-package #:rove/core/assertion)
@@ -69,6 +70,13 @@
 
 (defmacro signals (form &optional (condition 'error))
   `(typep (signal-of ,form) ,condition))
+
+(defmacro output-of (form &optional (stream '*standard-output*))
+  `(with-output-to-string (,stream)
+     ,form))
+
+(defmacro outputs (form content &optional (stream '*standard-output*))
+  `(equal (output-of ,form ,stream) ,content))
 
 (defun pass (desc)
   (signal 'passed

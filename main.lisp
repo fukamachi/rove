@@ -6,6 +6,7 @@
                 #:ok
                 #:ng
                 #:signals
+                #:outputs
                 #:pass
                 #:fail)
   (:import-from #:rove/core/test
@@ -22,6 +23,7 @@
   (:export #:ok
            #:ng
            #:signals
+           #:outputs
            #:pass
            #:fail
            #:deftest
