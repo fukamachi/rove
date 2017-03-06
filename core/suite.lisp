@@ -38,32 +38,33 @@
 
     (let ((*stats* (or *stats*
                        (make-instance 'stats))))
-      (let ((deps (remove-if-not (lambda (dep)
-                                   (system-component-p system dep))
-                                 (system-dependencies system))))
-        (dolist (dep deps)
-          (let* ((package-name (string-upcase (asdf:component-name dep)))
-                 (package (find-package package-name)))
-            (when package
-              (clear-package-tests package))
-
-            #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
-
-            (dolist (c (asdf:component-children dep))
-              (when (typep c 'asdf:cl-source-file)
-                (load (asdf:component-pathname c) :verbose t)))
-
-            (unless package
-              (or (setf package (find-package package-name))
-                  (error "Package ~A not found" package-name)))
-            (run-package-tests package))))
 
       (let* ((package-name (string-upcase (asdf:component-name system)))
              (package (find-package  package-name)))
+        #+quicklisp (ql:quickload package-name :silent t)
         (when package
           (clear-package-tests package))
 
-        #+quicklisp (ql:quickload package-name :silent t)
+        ;; Loading dependencies beforehand
+        (let ((deps (remove-if-not (lambda (dep)
+                                     (system-component-p system dep))
+                                   (system-dependencies system))))
+          (dolist (dep deps)
+            (let* ((package-name (string-upcase (asdf:component-name dep)))
+                   (package (find-package package-name)))
+              (when package
+                (clear-package-tests package))
+
+              #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
+
+              (dolist (c (asdf:component-children dep))
+                (when (typep c 'asdf:cl-source-file)
+                  (load (asdf:component-pathname c) :verbose t)))
+
+              (unless package
+                (or (setf package (find-package package-name))
+                    (error "Package ~A not found" package-name)))
+              (run-package-tests package))))
 
         ;; Loading CL-SOURCE-FILE
         (dolist (c (asdf:component-children system))
