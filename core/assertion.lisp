@@ -77,7 +77,7 @@
   `(handler-case (progn ,form nil)
      (condition (c) c)))
 
-(defmacro signals (form &optional (condition 'error))
+(defmacro signals (form &optional (condition ''error))
   `(typep (signal-of ,form) ,condition))
 
 (defmacro output-of (form &optional (stream '*standard-output*))
