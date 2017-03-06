@@ -13,6 +13,8 @@
                 #:deftest)
   (:import-from #:rove/core/suite
                 #:run-system-tests)
+  (:import-from #:rove/core/stats
+                #:*stats*)
   (:import-from #:rove/reporter
                 #:with-reporter
                 #:*report-stream*)
@@ -28,6 +30,8 @@
            #:fail
            #:deftest
            #:run
+
+           #:*stats*
 
            #:with-reporter
            #:*report-stream*

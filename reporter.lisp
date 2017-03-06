@@ -4,6 +4,7 @@
   (:import-from #:rove/core/stats
                 #:stats
                 #:*stats*)
+  (:import-from #:bordeaux-threads)
   (:export #:reporter
            #:reporter-stream
            #:with-reporter))
@@ -27,8 +28,14 @@
       (setf package (find-package package-name)))
     (make-instance
      (intern (format nil "~A-~A" style '#:reporter) package)
-     :stream stream)))
+     :stream
+     (if (typep stream 'synonym-stream)
+         (symbol-value (synonym-stream-symbol stream))
+         stream))))
 
 (defmacro with-reporter (reporter-style &body body)
-  `(let ((*stats* (make-reporter ,reporter-style)))
+  `(let* ((*stats* (make-reporter ,reporter-style))
+          (bt:*default-special-bindings*
+            (append `((*stats* . ,*stats*))
+                    bt:*default-special-bindings*)))
      ,@body))
