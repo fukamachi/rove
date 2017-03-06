@@ -5,7 +5,10 @@ exec ros -Q -- $0 "$@"
 |#
 (progn ;;init forms
   (ros:ensure-asdf)
-  (ql:quickload '(:rove) :silent t))
+  (ql:quickload '(:rove) :silent t)
+
+  (when (ros:getenv "COVERALLS")
+    (ql:quickload '(:cl-coveralls :split-sequence) :silent t)))
 
 (defpackage :ros.script.roswell/rove.3697685121
   (:use :cl))
@@ -17,16 +20,27 @@ exec ros -Q -- $0 "$@"
     (unless file
       (format *error-output* "~&Error: ~A not found.~%" target)
       (uiop:quit -1))
-    (or (rove:run
-         (cond
-           ((equal (pathname-type file) "lisp")
-            (let ((*print-case* :downcase))
-              (princ-to-string
-               (second (asdf/package-inferred-system::file-defpackage-form file)))))
-           ((equal (pathname-type file) "asd")
-            (pathname-name file))
-           (t
-            (format *error-output* "~&Error: Invalid file type.~%")
-            (uiop:quit -1))))
-        (uiop:quit -1))))
+    (unless (member (pathname-type file) '("lisp" "asd")
+                    :test #'string=)
+      (format *error-output* "~&Error: Invalid file type.~%")
+      (uiop:quit -1))
+
+    (flet ((run-tests ()
+             (rove:run
+              (cond
+                ((equal (pathname-type file) "lisp")
+                 (let ((*print-case* :downcase))
+                   (princ-to-string
+                    (second (asdf/package-inferred-system::file-defpackage-form file)))))
+                ((equal (pathname-type file) "asd")
+                 (pathname-name file))))))
+      (or #.(if (ros:getenv "COVERALLS")
+                `(,(intern (string :with-coveralls) :coveralls)
+                  (:exclude
+                   (,(intern (string :split-sequence) :split-sequence)
+                    #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
+                    :remove-empty-subseqs t))
+                  (run-tests))
+                '(run-tests))
+          (uiop:quit -1)))))
 ;;; vim: set ft=lisp lisp:
