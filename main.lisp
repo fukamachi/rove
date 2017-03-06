@@ -10,7 +10,8 @@
                 #:pass
                 #:fail)
   (:import-from #:rove/core/test
-                #:deftest)
+                #:deftest
+                #:testing)
   (:import-from #:rove/core/suite
                 #:run-system-tests)
   (:import-from #:rove/core/stats
@@ -29,6 +30,7 @@
            #:pass
            #:fail
            #:deftest
+           #:testing
            #:run
 
            #:*stats*
