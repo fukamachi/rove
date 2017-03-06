@@ -3,7 +3,9 @@
   (:use #:cl
         #:rove/core/assertion
         #:rove/core/test
-        #:rove/core/conditions)
+        #:rove/core/stats)
+  (:import-from #:rove/core/result
+                #:test-name)
   (:export #:run-system-tests))
 (in-package #:rove/core/suite)
 
@@ -34,52 +36,48 @@
     (unless (typep system 'asdf:package-inferred-system)
       (error "~A isn't a package-inferred-system" system))
 
-    (let ((passed '())
-          (failed '()))
-      (handler-bind ((package-tests-passed
-                       (lambda (c)
-                         (push (package-tests-name c) passed)))
-                     (package-tests-failed
-                       (lambda (c)
-                         (push (package-tests-name c) failed))))
-        (let ((deps (remove-if-not (lambda (dep)
-                                     (system-component-p system dep))
-                                   (system-dependencies system))))
-          (dolist (dep deps)
-            (let* ((package-name (string-upcase (asdf:component-name dep)))
-                   (package (find-package package-name)))
-              (when package
-                (clear-package-tests package))
+    (let ((*stats* (or *stats*
+                       (make-instance 'stats))))
+      (let ((deps (remove-if-not (lambda (dep)
+                                   (system-component-p system dep))
+                                 (system-dependencies system))))
+        (dolist (dep deps)
+          (let* ((package-name (string-upcase (asdf:component-name dep)))
+                 (package (find-package package-name)))
+            (when package
+              (clear-package-tests package))
 
-              #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
+            #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
 
-              (dolist (c (asdf:component-children dep))
-                (when (typep c 'asdf:cl-source-file)
-                  (load (asdf:component-pathname c) :verbose t)))
+            (dolist (c (asdf:component-children dep))
+              (when (typep c 'asdf:cl-source-file)
+                (load (asdf:component-pathname c) :verbose t)))
 
-              (unless package
-                (or (setf package (find-package package-name))
-                    (error "Package ~A not found" package-name)))
-              (run-package-tests package))))
-
-        (let* ((package-name (string-upcase (asdf:component-name system)))
-               (package (find-package  package-name)))
-          (when package
-            (clear-package-tests package))
-
-          #+quicklisp (ql:quickload package-name :silent t)
-
-          ;; Loading CL-SOURCE-FILE
-          (dolist (c (asdf:component-children system))
-            (when (typep c 'asdf:cl-source-file)
-              (load (asdf:component-pathname c) :verbose t)))
-
-          (unless package
-            (or (setf package (find-package package-name))
-                (error "Package ~A not found" package-name)))
-          (when (package-tests package)
+            (unless package
+              (or (setf package (find-package package-name))
+                  (error "Package ~A not found" package-name)))
             (run-package-tests package))))
 
-      (values (not failed)
-              (nreverse passed)
-              (nreverse failed)))))
+      (let* ((package-name (string-upcase (asdf:component-name system)))
+             (package (find-package  package-name)))
+        (when package
+          (clear-package-tests package))
+
+        #+quicklisp (ql:quickload package-name :silent t)
+
+        ;; Loading CL-SOURCE-FILE
+        (dolist (c (asdf:component-children system))
+          (when (typep c 'asdf:cl-source-file)
+            (load (asdf:component-pathname c) :verbose t)))
+
+        (unless package
+          (or (setf package (find-package package-name))
+              (error "Package ~A not found" package-name)))
+        (when (package-tests package)
+          (run-package-tests package)))
+
+      (values (= 0 (length (stats-failed *stats*)))
+              (loop for f across (stats-passed *stats*)
+                    collect (test-name f))
+              (loop for f across (stats-failed *stats*)
+                    collect (test-name f))))))

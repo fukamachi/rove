@@ -1,7 +1,8 @@
 (in-package #:cl-user)
 (defpackage #:rove/core/assertion
   (:use #:cl
-        #:rove/core/conditions)
+        #:rove/core/stats
+        #:rove/core/result)
   (:export #:ok
            #:ng
            #:signals
@@ -32,37 +33,45 @@
                   (error (,e)
                     (setf ,reason ,e)
                     nil))))
-         (signal (if ,result
-                     'passed
-                     'failed)
-                 :form ',form
-                 :steps ',(nreverse steps)
-                 :args ',(rest expanded-form)
-                 :values ,values
-                 :reason ,reason
-                 :desc ,desc)
+         (record *stats*
+                 (make-instance (if ,result
+                                    'passed-assertion
+                                    'failed-assertion)
+                                :form ',form
+                                :steps ',(nreverse steps)
+                                :args ',(rest expanded-form)
+                                :values ,values
+                                :reason ,reason
+                                :desc ,desc))
          ,result))))
 
 (defmacro ng (form &optional desc)
-  `(handler-case (ok ,form)
-     (passed (e)
-       (if (assertion-reason e)
-           (signal e)
-           (signal 'failed
-                   :form `(not ,(assertion-form e))
-                   :steps (assertion-steps e)
-                   :args (assertion-args e)
-                   :values (assertion-values e)
-                   :desc ,desc)))
-     (failed (e)
-       (if (assertion-reason e)
-           (signal e)
-           (signal 'passed
-                   :form `(not ,(assertion-form e))
-                   :steps (assertion-steps e)
-                   :args (assertion-args e)
-                   :values (assertion-values e)
-                   :desc ,desc)))))
+  (check-type form cons)
+  (let* ((steps (form-steps form))
+         (expanded-form (first steps)))
+    (let ((values (gensym "VALUES"))
+          (result (gensym "RESULT"))
+          (reason (gensym "REASON"))
+          (e (gensym "E")))
+      `(let* ((,reason nil)
+              (,values (list ,@(rest expanded-form)))
+              (,result
+                (handler-case (apply ',(first expanded-form) ,values)
+                  (error (,e)
+                    (setf ,reason ,e)
+                    nil))))
+         (record *stats*
+                 (make-instance (cond
+                                  (,reason 'failed-assertion)
+                                  (,result 'failed-assertion)
+                                  (t 'passed-assertion))
+                                :form ',form
+                                :steps ',(nreverse steps)
+                                :args ',(rest expanded-form)
+                                :values ,values
+                                :reason ,reason
+                                :desc ,desc))
+         ,result))))
 
 (defmacro signal-of (form)
   `(handler-case (progn ,form nil)
@@ -79,13 +88,15 @@
   `(equal (output-of ,form ,stream) ,content))
 
 (defun pass (desc)
-  (signal 'passed
-          :form t
-          :desc desc)
+  (record *stats*
+          (make-instance 'passed-assertion
+                         :form t
+                         :desc desc))
   t)
 
 (defun fail (desc)
-  (signal 'failed
-          :form t
-          :desc desc)
+  (record *stats*
+          (make-instance 'failed-assertion
+                         :form t
+                         :desc desc))
   nil)

@@ -1,7 +1,7 @@
 (in-package #:cl-user)
 (defpackage #:rove/core/test
   (:use #:cl
-        #:rove/core/conditions)
+        #:rove/core/stats)
   (:export #:deftest
            #:package-tests
            #:clear-package-tests
@@ -26,52 +26,22 @@
   (check-type package package)
   (remhash package *package-suites*))
 
-(defun run-test (test)
-  (check-type test symbol)
-  (assert (fboundp test))
-  (let ((passed-tests '())
-        (failed-tests '())
-        (test-name (let ((*print-case* :downcase))
-                     (princ-to-string test))))
+(defun run-test (test-symbol)
+  (check-type test-symbol symbol)
+  (assert (fboundp test-symbol))
 
-    (signal 'test-begin :name test-name)
-
+  (let ((test-name (let ((*print-case* :downcase))
+                     (princ-to-string test-symbol))))
+    (test-begin *stats* test-name)
     (unwind-protect
-         (handler-bind ((passed
-                          (lambda (c)
-                            (push c passed-tests)))
-                        (failed
-                          (lambda (c)
-                            (push c failed-tests))))
-           (funcall test))
-
-      (let ((passedp (null failed-tests)))
-        (signal (if passedp
-                    'test-passed
-                    'test-failed)
-                :name test-name
-                :passed (nreverse passed-tests)
-                :failed (nreverse failed-tests))
-
-        passedp))))
+         (funcall test-symbol)
+      (test-finish *stats* test-name))))
 
 (defun run-package-tests (package)
   (check-type package package)
   (let ((test-name (string-downcase (package-name package)))
-        (tests (package-tests package))
-        (passedp t))
-    (signal 'package-tests-begin
-            :name test-name
-            :count (length tests))
-    (unwind-protect
-         (dolist (test tests)
-           (handler-bind ((test-failed
-                            (lambda (c)
-                              (declare (ignore c))
-                              (setf passedp nil))))
-             (run-test test)))
-      (signal (if passedp
-                  'package-tests-passed
-                  'package-tests-failed)
-              :name test-name))
-    passedp))
+        (tests (package-tests package)))
+    (test-begin *stats* test-name (length tests))
+    (unwind-protect (dolist (test tests)
+                      (run-test test))
+      (test-finish *stats* test-name))))

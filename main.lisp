@@ -34,6 +34,6 @@
            #:*enable-colors*))
 (in-package #:rove/main)
 
-(defun run (target)
-  (with-reporter :spec
+(defun run (target &key (style :spec))
+  (with-reporter style
     (run-system-tests target)))
