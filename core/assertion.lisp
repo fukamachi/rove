@@ -27,12 +27,17 @@
           (reason (gensym "REASON"))
           (e (gensym "E")))
       `(let* ((,reason nil)
-              (,values (list ,@(rest expanded-form)))
+              (,values (handler-case (list ,@(rest expanded-form))
+                         (error (,e)
+                           (setf ,reason ,e)
+                           nil)))
               (,result
-                (handler-case (apply ',(first expanded-form) ,values)
-                  (error (,e)
-                    (setf ,reason ,e)
-                    nil))))
+                (if ,reason
+                    nil
+                    (handler-case (apply ',(first expanded-form) ,values)
+                      (error (,e)
+                        (setf ,reason ,e)
+                        nil)))))
          (record *stats*
                  (make-instance (if ,result
                                     'passed-assertion
