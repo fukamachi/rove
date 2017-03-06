@@ -68,7 +68,8 @@
                          (format nil "× ~D of ~D tests failed"
                                  (length (stats-failed reporter))
                                  (+ (length (stats-failed reporter))
-                                    (length (stats-passed reporter))))))
+                                    (length (stats-passed reporter)))))
+             stream)
             (let ((failed-assertions
                     (labels ((assertions (object)
                                (typecase object
@@ -79,7 +80,8 @@
                                                  (test-failed-assertions object)))))))
                       (loop for object across (stats-failed reporter)
                             append (assertions object)))))
-              (let ((*print-circle* t))
+              (let ((*print-circle* t)
+                    (*print-assertion* t))
                 (loop for i from 0
                       for f in failed-assertions
                       do (fresh-line stream)

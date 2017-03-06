@@ -4,6 +4,7 @@
   (:export #:passed
            #:failed
 
+           #:*print-assertion*
            #:assertion
            #:assertion-form
            #:assertion-steps
@@ -23,6 +24,8 @@
            #:passed-test
            #:failed-test))
 (in-package #:rove/core/result)
+
+(defvar *print-assertion* nil)
 
 (defclass passed () ())
 (defclass failed () ())
@@ -46,11 +49,13 @@
          :initform nil)))
 
 (defmethod print-object ((assertion assertion) stream)
-  (with-slots (steps args values) assertion
-    (format stream "~{~S~^~%~}" steps)
-    (loop for arg in args
-          for value in values
-          do (format stream "~&    ~A = ~S" arg value))))
+  (if *print-assertion*
+      (with-slots (steps args values) assertion
+        (format stream "~{~S~^~%~}" steps)
+        (loop for arg in args
+              for value in values
+              do (format stream "~&    ~A = ~S" arg value)))
+      (call-next-method)))
 
 (defun form-description (form values)
   (destructuring-bind (test-fn &rest args) form

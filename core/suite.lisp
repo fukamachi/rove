@@ -77,7 +77,5 @@
           (run-package-tests package)))
 
       (values (= 0 (length (stats-failed *stats*)))
-              (loop for f across (stats-passed *stats*)
-                    collect (test-name f))
-              (loop for f across (stats-failed *stats*)
-                    collect (test-name f))))))
+              (coerce (stats-passed *stats*) 'list)
+              (coerce (stats-failed *stats*) 'list)))))
