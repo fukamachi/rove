@@ -73,10 +73,10 @@
                             :name test-name
                             :passed (coerce (stats-passed (stats-context stats)) 'list)
                             :failed (coerce (stats-failed (stats-context stats)) 'list))))
-      (leave-context stats)
-      (record stats test)
+      (let ((context (leave-context stats)))
+        (record stats test)
 
-      passedp)))
+        (values passedp context)))))
 
 (defun toplevel-stats-p (stats)
   (null (slot-value stats 'contexts)))
