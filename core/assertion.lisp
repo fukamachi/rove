@@ -8,7 +8,8 @@
            #:signals
            #:outputs
            #:pass
-           #:fail))
+           #:fail
+           #:skip))
 (in-package #:rove/core/assertion)
 
 (defun form-steps (form)
@@ -111,3 +112,10 @@
                          :form t
                          :desc desc))
   nil)
+
+(defun skip (desc)
+  (record *stats*
+          (make-instance 'pending-assertion
+                         :form t
+                         :desc desc))
+  t)

@@ -3,6 +3,7 @@
   (:use #:cl)
   (:export #:passed
            #:failed
+           #:pending
 
            #:*print-assertion*
            #:assertion
@@ -17,10 +18,12 @@
            #:test
            #:test-passed-assertions
            #:test-failed-assertions
+           #:test-pending-assertions
            #:test-passed-p
 
            #:passed-assertion
            #:failed-assertion
+           #:pending-assertion
            #:passed-test
            #:failed-test))
 (in-package #:rove/core/result)
@@ -29,6 +32,7 @@
 
 (defclass passed () ())
 (defclass failed () ())
+(defclass pending () ())
 
 (defclass assertion ()
   ((form :initarg :form
@@ -82,7 +86,10 @@
            :accessor test-passed-assertions)
    (failed :initarg :failed
            :initform nil
-           :accessor test-failed-assertions)))
+           :accessor test-failed-assertions)
+   (pending :initarg :pending
+            :initform nil
+            :accessor test-pending-assertions)))
 
 (defgeneric test-passed-p (test)
   (:method ((test test))
@@ -90,6 +97,7 @@
 
 (defclass passed-assertion (assertion passed) ())
 (defclass failed-assertion (assertion failed) ())
+(defclass pending-assertion (assertion pending) ())
 
 (defclass passed-test (test passed) ())
 (defclass failed-test (test failed) ())

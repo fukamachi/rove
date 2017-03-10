@@ -40,6 +40,15 @@
        stream)
       (fresh-line stream))))
 
+(defmethod record ((reporter spec-reporter) (object pending-assertion))
+  (call-next-method)
+  (let ((stream (reporter-stream reporter)))
+    (fresh-line stream)
+    (princ (color-text :aqua "- ") stream)
+    (with-indent (stream +2)
+      (princ (color-text :aqua (assertion-description object)) stream)
+      (fresh-line stream))))
+
 (defmethod test-begin ((reporter spec-reporter) test-name &optional count)
   (declare (ignore count))
   (call-next-method)
@@ -105,5 +114,12 @@
                                (princ
                                 (color-text :gray (princ-to-string f))
                                 stream))))))))
-        (fresh-line stream))
+        (fresh-line stream)
+        (unless (= 0 (length (stats-pending context)))
+          (princ
+           (color-text :aqua
+                       (format nil "● ~D tests skipped"
+                               (length (stats-pending context))))
+           stream)
+          (fresh-line stream)))
       passedp)))

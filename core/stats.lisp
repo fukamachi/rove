@@ -6,6 +6,7 @@
            #:stats
            #:stats-passed
            #:stats-failed
+           #:stats-pending
            #:stats-plan
            #:stats-context
            #:record
@@ -21,6 +22,8 @@
            :accessor stats-passed)
    (failed :initform (make-array 0 :adjustable t :fill-pointer 0)
            :accessor stats-failed)
+   (pending :initform (make-array 0 :adjustable t :fill-pointer 0)
+            :accessor stats-pending)
    (plan :initarg :plan
          :initform nil
          :accessor stats-plan)
@@ -53,6 +56,8 @@
     (vector-push-extend object (stats-passed (stats-context stats))))
   (:method ((stats stats) (object failed))
     (vector-push-extend object (stats-failed (stats-context stats))))
+  (:method ((stats stats) (object pending))
+    (vector-push-extend object (stats-pending (stats-context stats))))
   (:method ((stats null) object)
     (declare (ignore object))))
 
@@ -72,7 +77,8 @@
                                 'failed-test)
                             :name test-name
                             :passed (coerce (stats-passed (stats-context stats)) 'list)
-                            :failed (coerce (stats-failed (stats-context stats)) 'list))))
+                            :failed (coerce (stats-failed (stats-context stats)) 'list)
+                            :pending (coerce (stats-pending (stats-context stats)) 'list))))
       (let ((context (leave-context stats)))
         (record stats test)
 

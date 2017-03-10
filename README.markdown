@@ -81,6 +81,13 @@ $ rove tests/request.lisp
 ;-> ✓ Oops. It's failed
 ```
 
+### skip (description)
+
+```common-lisp
+(skip "Skipped for now.")
+;-> - Skipped for now.
+```
+
 ### deftest (name &body body)
 
 ```common-lisp

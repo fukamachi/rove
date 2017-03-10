@@ -8,7 +8,8 @@
                 #:signals
                 #:outputs
                 #:pass
-                #:fail)
+                #:fail
+                #:skip)
   (:import-from #:rove/core/test
                 #:deftest
                 #:testing)
@@ -29,6 +30,7 @@
            #:outputs
            #:pass
            #:fail
+           #:skip
            #:deftest
            #:testing
            #:run
