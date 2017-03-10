@@ -78,7 +78,7 @@ $ rove tests/request.lisp
 
 ```common-lisp
 (fail "Oops. It's failed")
-;-> ✓ Oops. It's failed
+;-> × Oops. It's failed
 ```
 
 ### skip (description)
@@ -106,7 +106,7 @@ $ rove tests/request.lisp
     (ok (= (length (list 1 2 3)) 3))))
 ```
 
-### run (file &key style)
+### run (package &key style)
 
 ```common-lisp
 (run :myapp/tests)
