@@ -58,13 +58,15 @@
       (call-next-method)))
 
 (defun form-description (form values)
-  (destructuring-bind (test-fn &rest args) form
-    (case test-fn
-      (cl:typep (format nil "Expect ~A to be an instance of ~A."
-                        (first args)
-                        (second values)))
-      (cl:not (format nil "Expect ~A to be false." (first args)))
-      (otherwise (format nil "Expect ~A to be true." form)))))
+  (if (consp form)
+      (destructuring-bind (test-fn &rest args) form
+        (case test-fn
+          (cl:typep (format nil "Expect ~A to be an instance of ~A."
+                            (first args)
+                            (second values)))
+          (cl:not (format nil "Expect ~A to be false." (first args)))
+          (otherwise (format nil "Expect ~A to be true." form))))
+      (format nil "Expect ~A to be true." form)))
 
 (defun assertion-description (assertion)
   (with-slots (desc form values) assertion
