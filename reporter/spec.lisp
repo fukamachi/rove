@@ -97,7 +97,7 @@
                            (write-char #\Newline stream)
                            (princ
                             (color-text :white
-                                        (format nil "~A) ~A failed." i (assertion-description f)))
+                                        (format nil "~A) ~A" i (assertion-description f)))
                             stream)
                            (fresh-line stream)
                            (with-indent (stream (+ (length (write-to-string i)) 2))
