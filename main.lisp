@@ -3,6 +3,7 @@
   (:nicknames #:rove)
   (:use #:cl)
   (:import-from #:rove/core/assertion
+                #:*debug-on-error*
                 #:ok
                 #:ng
                 #:signals
@@ -24,7 +25,8 @@
                 #:*enable-colors*)
   (:import-from #:rove/reporter/spec
                 #:spec-reporter)
-  (:export #:ok
+  (:export #:*debug-on-error*
+           #:ok
            #:ng
            #:signals
            #:outputs

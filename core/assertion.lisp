@@ -3,7 +3,8 @@
   (:use #:cl
         #:rove/core/stats
         #:rove/core/result)
-  (:export #:ok
+  (:export #:*debug-on-error*
+           #:ok
            #:ng
            #:signals
            #:outputs
@@ -11,6 +12,8 @@
            #:fail
            #:skip))
 (in-package #:rove/core/assertion)
+
+(defvar *debug-on-error* nil)
 
 (defun form-steps (form)
   (if (consp form)
@@ -29,29 +32,31 @@
     (let* ((steps (form-steps form))
            (expanded-form (first steps)))
       `(let (,values ,result)
-         (flet ((make-assertion (&optional ,reason)
-                  (make-instance (funcall ,class-fn ,result ,reason)
-                                 :form ',form
-                                 :steps ',(nreverse steps)
-                                 :args ',(if (consp expanded-form)
-                                             (rest expanded-form)
-                                             nil)
-                                 :values ,values
-                                 :reason ,reason
-                                 :desc ,desc)))
-           (handler-case
-               (progn
-                 (setf ,values
-                       ,@(and (consp expanded-form)
-                              `((list ,@(rest expanded-form)))))
-                 (setf ,result
-                       ,(if (consp expanded-form)
-                            `(apply ',(first expanded-form) ,values)
-                            expanded-form))
-                 (record *stats* (make-assertion))
-                 ,result)
-             (error (,e)
-               (record *stats* (make-assertion ,e)))))))))
+         (labels ((make-assertion (&optional ,reason)
+                    (make-instance (funcall ,class-fn ,result ,reason)
+                                   :form ',form
+                                   :steps ',(nreverse steps)
+                                   :args ',(if (consp expanded-form)
+                                               (rest expanded-form)
+                                               nil)
+                                   :values ,values
+                                   :reason ,reason
+                                   :desc ,desc))
+                  (main ()
+                    (setf ,values
+                          ,@(and (consp expanded-form)
+                                 `((list ,@(rest expanded-form)))))
+                    (setf ,result
+                          ,(if (consp expanded-form)
+                               `(apply ',(first expanded-form) ,values)
+                               expanded-form))
+                    (record *stats* (make-assertion))
+                    ,result))
+           (if *debug-on-error*
+               (main)
+               (handler-case (main)
+                 (error (,e)
+                   (record *stats* (make-assertion ,e))))))))))
 
 (defmacro ok (form &optional desc)
   `(%okng ,form ,desc

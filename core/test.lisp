@@ -2,6 +2,9 @@
 (defpackage #:rove/core/test
   (:use #:cl
         #:rove/core/stats)
+  (:import-from #:rove/core/assertion
+                #:*debug-on-error*
+                #:failed-assertion)
   (:export #:deftest
            #:testing
            #:package-tests
@@ -28,7 +31,15 @@
   `(progn
      (test-begin *stats* ,desc)
      (unwind-protect
-          (progn ,@body)
+          (if *debug-on-error*
+              (progn ,@body)
+              (handler-case (progn ,@body)
+                (error (e)
+                  (record *stats*
+                          (make-instance 'failed-assertion
+                                         :form t
+                                         :reason e
+                                         :desc "Raise an error while testing.")))))
        (test-finish *stats* ,desc))))
 
 (defun package-tests (package)
