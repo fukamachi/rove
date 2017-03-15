@@ -42,6 +42,7 @@
       (let* ((package-name (string-upcase (asdf:component-name system)))
              (package (find-package  package-name)))
         #+quicklisp (ql:quickload package-name :silent t)
+        #-quicklisp (asdf:load-system (asdf:component-name system))
         (when package
           (clear-package-tests package))
 
@@ -56,6 +57,7 @@
                 (clear-package-tests package))
 
               #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
+              #-quicklisp (asdf:load-system (asdf:component-name dep))
 
               (dolist (c (asdf:component-children dep))
                 (when (typep c 'asdf:cl-source-file)
