@@ -18,6 +18,8 @@
                 #:run-system-tests)
   (:import-from #:rove/core/stats
                 #:*stats*)
+  (:import-from #:rove/core/result
+                #:form-description)
   (:import-from #:rove/reporter
                 #:with-reporter
                 #:*report-stream*)
@@ -36,6 +38,8 @@
            #:deftest
            #:testing
            #:run
+
+           #:form-description
 
            #:*stats*
 

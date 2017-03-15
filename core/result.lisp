@@ -5,6 +5,8 @@
            #:failed
            #:pending
 
+           #:form-description
+
            #:*print-assertion*
            #:assertion
            #:assertion-form
@@ -61,22 +63,25 @@
               do (format stream "~&    ~A = ~S" arg value)))
       (call-next-method)))
 
-(defun form-description (form values)
-  (if (consp form)
-      (destructuring-bind (test-fn &rest args) form
-        (case test-fn
-          (cl:typep (format nil "Expect ~A to be an instance of ~A."
-                            (first args)
-                            (second values)))
-          (cl:not (format nil "Expect ~A to be false." (first args)))
-          (otherwise (format nil "Expect ~A to be true." form))))
-      (format nil "Expect ~A to be true." form)))
+(defgeneric form-description (function args values)
+  (:method (function args values)
+    (declare (ignore values))
+    (format nil "Expect ~A to be true." `(,function ,args)))
+  (:method ((function (eql 'cl:typep)) args values)
+    (format nil "Expect ~A to be an instance of ~A."
+            (first args)
+            (second values)))
+  (:method ((function (eql 'cl:not)) args values)
+    (declare (ignore values))
+    (format nil "Expect ~A to be false." (first args))))
 
 (defun assertion-description (assertion)
   (with-slots (desc form values) assertion
     (or desc
         ;; Default description
-        (form-description form values))))
+        (if (consp form)
+            (form-description (first form) (rest form) values)
+            (format nil "Expect ~A to be true." form)))))
 
 (defclass test ()
   ((name :initarg :name
