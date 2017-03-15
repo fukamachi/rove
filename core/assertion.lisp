@@ -21,69 +21,53 @@
           (push step-form steps)))
       (list form)))
 
-(defmacro ok (form &optional desc)
+(defmacro %okng (form desc class-fn)
   (let ((values (gensym "VALUES"))
         (result (gensym "RESULT"))
         (reason (gensym "REASON"))
         (e (gensym "E")))
     (let* ((steps (form-steps form))
            (expanded-form (first steps)))
-      `(let* ((,reason nil)
-              (,values ,@(and (consp expanded-form)
-                              `((handler-case (list ,@(rest expanded-form))
-                                   (error (,e)
-                                     (setf ,reason ,e)
-                                     nil)))))
-              (,result
-                (if ,reason
-                    nil
-                    (handler-case ,(if (consp expanded-form)
-                                       `(apply ',(first expanded-form) ,values)
-                                       expanded-form)
-                      (error (,e)
-                        (setf ,reason ,e)
-                        nil)))))
-         (record *stats*
-                 (make-instance (if ,result
-                                    'passed-assertion
-                                    'failed-assertion)
-                                :form ',form
-                                :steps ',(nreverse steps)
-                                :args ',(if (consp expanded-form)
-                                            (rest expanded-form)
-                                            nil)
-                                :values ,values
-                                :reason ,reason
-                                :desc ,desc))
-         ,result))))
+      `(let (,values ,result)
+         (flet ((make-assertion (&optional ,reason)
+                  (make-instance (funcall ,class-fn ,result ,reason)
+                                 :form ',form
+                                 :steps ',(nreverse steps)
+                                 :args ',(if (consp expanded-form)
+                                             (rest expanded-form)
+                                             nil)
+                                 :values ,values
+                                 :reason ,reason
+                                 :desc ,desc)))
+           (handler-case
+               (progn
+                 (setf ,values
+                       ,@(and (consp expanded-form)
+                              `((list ,@(rest expanded-form)))))
+                 (setf ,result
+                       ,(if (consp expanded-form)
+                            `(apply ',(first expanded-form) ,values)
+                            expanded-form))
+                 (record *stats* (make-assertion))
+                 ,result)
+             (error (,e)
+               (record *stats* (make-assertion ,e)))))))))
+
+(defmacro ok (form &optional desc)
+  `(%okng ,form ,desc
+          (lambda (result error)
+            (declare (ignore error))
+            (if result
+                'passed-assertion
+                'failed-assertion))))
 
 (defmacro ng (form &optional desc)
-  (check-type form cons)
-  (let* ((steps (form-steps form))
-         (expanded-form (first steps)))
-    (let ((values (gensym "VALUES"))
-          (result (gensym "RESULT"))
-          (reason (gensym "REASON"))
-          (e (gensym "E")))
-      `(let* ((,reason nil)
-              (,values (list ,@(rest expanded-form)))
-              (,result
-                (handler-case (apply ',(first expanded-form) ,values)
-                  (error (,e)
-                    (setf ,reason ,e)
-                    nil))))
-         (record *stats*
-                 (make-instance (cond
-                                  (,reason 'failed-assertion)
-                                  (,result 'failed-assertion)
-                                  (t 'passed-assertion))
-                                :form ',form
-                                :steps ',(nreverse steps)
-                                :args ',(rest expanded-form)
-                                :values ,values
-                                :reason ,reason
-                                :desc ,desc))
-         ,result))))
+  `(%okng ,form ,desc
+          (lambda (result error)
+            (cond
+              (error 'failed-assertion)
+              (result 'failed-assertion)
+              (t 'passed-assertion)))))
 
 (defmacro signal-of (form)
   `(handler-case (progn ,form nil)
