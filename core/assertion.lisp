@@ -19,7 +19,9 @@
   (if (consp form)
       (let ((steps '()))
         (do ((step-form form (macroexpand-1 step-form)))
-            ((not (macro-function (first step-form)))
+            ((or (eq (symbol-package (first step-form)) (find-package :cl))
+                 (special-operator-p (first step-form))
+                 (not (macro-function (first step-form))))
              (cons step-form steps))
           (push step-form steps)))
       (list form)))
@@ -43,13 +45,15 @@
                                    :reason ,reason
                                    :desc ,desc))
                   (main ()
-                    (setf ,values
-                          ,@(and (consp expanded-form)
-                                 `((list ,@(rest expanded-form)))))
-                    (setf ,result
-                          ,(if (consp expanded-form)
-                               `(apply ',(first expanded-form) ,values)
-                               expanded-form))
+                    ,@(cond
+                        ((or (not (consp expanded-form))
+                             (special-operator-p (first expanded-form))
+                             (macro-function (first expanded-form)))
+                         `((setf ,values nil)
+                           (setf ,result ,expanded-form)))
+                        (t
+                         `((setf ,values (list ,@(rest expanded-form)))
+                           (setf ,result (apply ',(first expanded-form) ,values)))))
                     (record *stats* (make-assertion))
                     ,result))
            (if *debug-on-error*
