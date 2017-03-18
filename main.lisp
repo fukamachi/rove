@@ -22,6 +22,7 @@
                 #:form-description)
   (:import-from #:rove/reporter
                 #:with-reporter
+                #:diag
                 #:*report-stream*)
   (:import-from #:rove/misc/color
                 #:*enable-colors*)
@@ -43,6 +44,7 @@
 
            #:*stats*
 
+           #:diag
            #:with-reporter
            #:*report-stream*
            #:*enable-colors*))

@@ -7,6 +7,8 @@
   (:import-from #:bordeaux-threads)
   (:export #:reporter
            #:reporter-stream
+           #:print-message
+           #:diag
            #:with-reporter))
 (in-package #:rove/reporter)
 
@@ -32,6 +34,14 @@
      (if (typep stream 'synonym-stream)
          (symbol-value (synonym-stream-symbol stream))
          stream))))
+
+(defgeneric print-message (reporter desc)
+  (:method ((reporter reporter) desc)
+    (princ desc (reporter-stream reporter))))
+
+(defun diag (desc)
+  (when (typep *stats* 'reporter)
+    (print-message *stats* desc)))
 
 (defmacro with-reporter (reporter-style &body body)
   `(let* ((*stats* (make-reporter ,reporter-style))
