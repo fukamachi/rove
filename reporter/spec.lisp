@@ -6,6 +6,8 @@
         #:rove/reporter
         #:rove/misc/stream
         #:rove/misc/color)
+  (:import-from #:dissect
+                #:present-object)
   (:export #:spec-reporter))
 (in-package #:rove/reporter/spec)
 
@@ -108,12 +110,18 @@
                                                     (type-of (assertion-reason f))
                                                     (assertion-reason f)))
                                 stream)
-                               (fresh-line stream)
-                               (write-char #\Newline stream))
+                               (fresh-line stream))
                              (with-indent (stream +2)
                                (princ
                                 (color-text :gray (princ-to-string f))
-                                stream))))))))
+                                stream)
+                               (fresh-line stream)
+                               (when (assertion-stacks f)
+                                 (write-char #\Newline stream)
+                                 (loop repeat 15
+                                       for stack in (assertion-stacks f)
+                                       do (princ (color-text :gray (dissect:present-object stack nil)) stream)
+                                          (fresh-line stream))))))))))
         (fresh-line stream)
         (unless (= 0 (length (stats-pending context)))
           (princ

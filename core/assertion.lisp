@@ -3,6 +3,8 @@
   (:use #:cl
         #:rove/core/stats
         #:rove/core/result)
+  (:import-from #:dissect
+                #:stack)
   (:export #:*debug-on-error*
            #:ok
            #:ng
@@ -30,11 +32,12 @@
   (let ((values (gensym "VALUES"))
         (result (gensym "RESULT"))
         (reason (gensym "REASON"))
+        (stacks (gensym "STACKS"))
         (e (gensym "E")))
     (let* ((steps (form-steps form))
            (expanded-form (first steps)))
       `(let (,values ,result)
-         (labels ((make-assertion (&optional ,reason)
+         (labels ((make-assertion (&optional ,reason ,stacks)
                     (make-instance (funcall ,class-fn ,result ,reason)
                                    :form ',form
                                    :steps ',(nreverse steps)
@@ -43,6 +46,7 @@
                                                nil)
                                    :values ,values
                                    :reason ,reason
+                                   :stacks ,stacks
                                    :desc ,desc))
                   (main ()
                     ,@(cond
@@ -58,9 +62,12 @@
                     ,result))
            (if *debug-on-error*
                (main)
-               (handler-case (main)
-                 (error (,e)
-                   (record *stats* (make-assertion ,e))))))))))
+               (block nil
+                 (handler-bind ((error
+                                  (lambda (,e)
+                                    (record *stats* (make-assertion ,e (dissect:stack)))
+                                    (return nil))))
+                   (main)))))))))
 
 (defmacro ok (form &optional desc)
   `(%okng ,form ,desc

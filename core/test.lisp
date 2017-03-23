@@ -5,6 +5,8 @@
   (:import-from #:rove/core/assertion
                 #:*debug-on-error*
                 #:failed-assertion)
+  (:import-from #:dissect
+                #:stack)
   (:export #:deftest
            #:testing
            #:package-tests
@@ -33,13 +35,17 @@
      (unwind-protect
           (if *debug-on-error*
               (progn ,@body)
-              (handler-case (progn ,@body)
-                (error (e)
-                  (record *stats*
-                          (make-instance 'failed-assertion
-                                         :form t
-                                         :reason e
-                                         :desc "Raise an error while testing.")))))
+              (block nil
+                (handler-bind ((error
+                                 (lambda (e)
+                                   (record *stats*
+                                           (make-instance 'failed-assertion
+                                                          :form t
+                                                          :reason e
+                                                          :stacks (dissect:stack)
+                                                          :desc "Raise an error while testing."))
+                                   (return nil))))
+                  ,@body)))
        (test-finish *stats* ,desc))))
 
 (defun package-tests (package)
