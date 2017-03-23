@@ -17,7 +17,8 @@
   (:import-from #:rove/core/suite
                 #:run-system-tests)
   (:import-from #:rove/core/stats
-                #:*stats*)
+                #:*stats*
+                #:plan)
   (:import-from #:rove/core/result
                 #:form-description)
   (:import-from #:rove/reporter
@@ -43,6 +44,7 @@
            #:form-description
 
            #:*stats*
+           #:plan
 
            #:diag
            #:with-reporter

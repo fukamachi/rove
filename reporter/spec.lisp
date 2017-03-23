@@ -62,7 +62,8 @@
 
 (defmethod test-finish ((reporter spec-reporter) test-name)
   (multiple-value-bind (passedp context) (call-next-method)
-    (let ((stream (reporter-stream reporter)))
+    (let ((stream (reporter-stream reporter))
+          (test-count (context-test-count context)))
       (decf (stream-indent-level stream) 2)
       (when (toplevel-stats-p reporter)
         (fresh-line stream)
@@ -78,8 +79,7 @@
                (color-text :red
                            (format nil "× ~D of ~D tests failed"
                                    (length (stats-failed context))
-                                   (+ (length (stats-failed context))
-                                      (length (stats-passed context)))))
+                                   test-count))
                stream)
               (let ((failed-assertions
                       (labels ((assertions (object)
@@ -130,4 +130,13 @@
                                (length (stats-pending context))))
            stream)
           (fresh-line stream)))
+      (when (and (stats-plan context)
+                 (/= (stats-plan context) test-count))
+        (princ
+         (color-text :red
+                     (format nil "× Looks like you planned ~D test~:*~P but ran ~A."
+                             (stats-plan context)
+                             test-count))
+         stream)
+        (fresh-line stream))
       passedp)))

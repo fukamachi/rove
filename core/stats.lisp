@@ -9,7 +9,9 @@
            #:stats-pending
            #:stats-plan
            #:stats-context
+           #:context-test-count
            #:record
+           #:plan
            #:test-begin
            #:test-finish
            #:toplevel-stats-p))
@@ -43,6 +45,12 @@
     (or (first (slot-value stats 'contexts))
         stats)))
 
+(defgeneric context-test-count (context)
+  (:method ((context stats))
+    (+ (length (stats-failed context))
+       (length (stats-passed context))
+       (length (stats-pending context)))))
+
 (defun new-context (stats)
   (let ((context (make-instance 'stats)))
     (push context (slot-value stats 'contexts))
@@ -61,6 +69,10 @@
   (:method ((stats null) object)
     (declare (ignore object))))
 
+(defun plan (count)
+  (check-type count integer)
+  (setf (stats-plan (stats-context *stats*)) count))
+
 (defgeneric test-begin (stats test-name &optional count)
   (:method (stats test-name &optional count)
     (declare (ignore test-name))
@@ -70,7 +82,13 @@
 
 (defgeneric test-finish (stats test-name)
   (:method (stats test-name)
-    (let* ((passedp (= 0 (length (stats-failed (stats-context stats)))))
+    (let* ((context (stats-context stats))
+           (passedp (and (= 0 (length (stats-failed context)))
+                         (or (null (stats-plan context))
+                             (= (stats-plan context)
+                                (+ (length (stats-failed context))
+                                   (length (stats-passed context))
+                                   (length (stats-pending context)))))))
            (test
              (make-instance (if passedp
                                 'passed-test
