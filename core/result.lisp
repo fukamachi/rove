@@ -70,7 +70,7 @@
 (defgeneric form-description (function args values)
   (:method (function args values)
     (declare (ignore values))
-    (format nil "Expect ~A to be true." `(,function ,args)))
+    (format nil "Expect ~A to be true." `(,function ,@args)))
   (:method ((function (eql 'cl:typep)) args values)
     (format nil "Expect ~A to be an instance of ~A."
             (first args)
