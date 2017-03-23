@@ -5,6 +5,10 @@
   (:import-from #:rove/core/assertion
                 #:*debug-on-error*
                 #:failed-assertion)
+  (:import-from #:rove/core/suite/package
+                #:*package-suites*
+                #:*execute-assertions*
+                #:wrap-if-toplevel)
   (:import-from #:dissect
                 #:stack)
   (:export #:deftest
@@ -14,9 +18,6 @@
            #:run-test
            #:run-package-tests))
 (in-package #:rove/core/test)
-
-(defvar *package-suites*
-  (make-hash-table :test 'eq))
 
 (defmacro deftest (name &body body)
   (let ((test-name (let ((*print-case* :downcase))
@@ -30,7 +31,7 @@
            ,@body)))))
 
 (defmacro testing (desc &body body)
-  `(progn
+  `(wrap-if-toplevel
      (test-begin *stats* ,desc)
      (unwind-protect
           (if *debug-on-error*
@@ -58,7 +59,8 @@
 (defun run-package-tests (package)
   (check-type package package)
   (let ((test-name (string-downcase (package-name package)))
-        (tests (package-tests package)))
+        (tests (package-tests package))
+        (*execute-assertions* t))
     (test-begin *stats* test-name (length tests))
     (unwind-protect (dolist (test tests)
                       (funcall test))

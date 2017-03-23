@@ -3,6 +3,8 @@
   (:use #:cl
         #:rove/core/stats
         #:rove/core/result)
+  (:import-from #:rove/core/suite/package
+                #:wrap-if-toplevel)
   (:import-from #:dissect
                 #:stack)
   (:export #:*debug-on-error*
@@ -70,20 +72,22 @@
                    (main)))))))))
 
 (defmacro ok (form &optional desc)
-  `(%okng ,form ,desc
-          (lambda (result error)
-            (declare (ignore error))
-            (if result
-                'passed-assertion
-                'failed-assertion))))
+  `(wrap-if-toplevel
+    (%okng ,form ,desc
+           (lambda (result error)
+             (declare (ignore error))
+             (if result
+                 'passed-assertion
+                 'failed-assertion)))))
 
 (defmacro ng (form &optional desc)
-  `(%okng ,form ,desc
-          (lambda (result error)
-            (cond
-              (error 'failed-assertion)
-              (result 'failed-assertion)
-              (t 'passed-assertion)))))
+  `(wrap-if-toplevel
+    (%okng ,form ,desc
+           (lambda (result error)
+             (cond
+               (error 'failed-assertion)
+               (result 'failed-assertion)
+               (t 'passed-assertion))))))
 
 (defmacro signal-of (form)
   `(handler-case (progn ,form nil)
@@ -100,22 +104,25 @@
   `(equal (output-of ,form ,stream) ,content))
 
 (defun pass (desc)
-  (record *stats*
-          (make-instance 'passed-assertion
-                         :form t
-                         :desc desc))
-  t)
+  (wrap-if-toplevel
+   (record *stats*
+           (make-instance 'passed-assertion
+                          :form t
+                          :desc desc))
+   t))
 
 (defun fail (desc)
-  (record *stats*
-          (make-instance 'failed-assertion
-                         :form t
-                         :desc desc))
-  nil)
+  (wrap-if-toplevel
+   (record *stats*
+           (make-instance 'failed-assertion
+                          :form t
+                          :desc desc))
+   nil))
 
 (defun skip (desc)
-  (record *stats*
-          (make-instance 'pending-assertion
-                         :form t
-                         :desc desc))
-  t)
+  (wrap-if-toplevel
+   (record *stats*
+           (make-instance 'pending-assertion
+                          :form t
+                          :desc desc))
+   t))

@@ -6,6 +6,8 @@
         #:rove/core/stats)
   (:import-from #:rove/core/result
                 #:test-name)
+  (:import-from #:rove/core/suite/package
+                #:*execute-assertions*)
   (:export #:run-system-tests))
 (in-package #:rove/core/suite)
 
@@ -37,12 +39,15 @@
       (error "~A isn't a package-inferred-system" system))
 
     (let ((*stats* (or *stats*
-                       (make-instance 'stats))))
+                       (make-instance 'stats)))
+          (*execute-assertions* nil))
 
       (let* ((package-name (string-upcase (asdf:component-name system)))
-             (package (find-package  package-name)))
-        #+quicklisp (ql:quickload package-name :silent t)
+             (package (find-package package-name)))
+
+        #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
         #-quicklisp (asdf:load-system (asdf:component-name system))
+
         (when package
           (clear-package-tests package))
 

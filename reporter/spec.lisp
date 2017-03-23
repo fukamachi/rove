@@ -67,7 +67,7 @@
       (when (toplevel-stats-p reporter)
         (fresh-line stream)
         (write-char #\Newline stream)
-        (if (= 0 (length (stats-failed reporter)))
+        (if (= 0 (length (stats-failed context)))
             (princ
              (color-text :green
                          (format nil "✓ ~D tests completed"
