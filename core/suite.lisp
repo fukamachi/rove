@@ -78,10 +78,8 @@
           (when (typep c 'asdf:cl-source-file)
             (load (asdf:component-pathname c) :verbose t)))
 
-        (unless package
-          (or (setf package (find-package package-name))
-              (error "Package ~A not found" package-name)))
-        (when (package-tests package)
+        (when (and package
+                   (package-tests package))
           (run-package-tests package)))
 
       (values (= 0 (length (stats-failed *stats*)))
