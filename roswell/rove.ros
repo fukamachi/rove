@@ -26,7 +26,7 @@ exec ros -Q -- $0 "$@"
       (uiop:quit -1))
 
     (flet ((run-tests ()
-             (rove:run
+             (asdf:test-system
               (cond
                 ((equal (pathname-type file) "lisp")
                  (let ((*print-case* :downcase))
