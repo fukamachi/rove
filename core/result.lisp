@@ -19,6 +19,7 @@
            #:dump-details
 
            #:test
+           #:test-name
            #:test-passed-assertions
            #:test-failed-assertions
            #:test-pending-assertions

@@ -60,6 +60,9 @@
         #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
         #-quicklisp (asdf:load-system (asdf:component-name system))
 
+        (when package
+          (clear-package-tests package))
+
         ;; Loading dependencies beforehand
         (let ((deps (remove-if-not (lambda (dep)
                                      (system-component-p system dep))
@@ -67,22 +70,43 @@
           (dolist (dep deps)
             (let* ((package-name (string-upcase (asdf:component-name dep)))
                    (package (find-package package-name)))
+              (when package
+                (clear-package-tests package))
 
               #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
               #-quicklisp (asdf:load-system (asdf:component-name dep))
+
+              (dolist (c (asdf:component-children dep))
+                (when (typep c 'asdf:cl-source-file)
+                  (load (asdf:component-pathname c) :verbose t)))
 
               (unless package
                 (or (setf package (find-package package-name))
                     (error "Package ~A not found" package-name)))
               (run-package-tests package))))
 
+        ;; Loading CL-SOURCE-FILE
+        (dolist (c (asdf:component-children system))
+          (when (typep c 'asdf:cl-source-file)
+            (load (asdf:component-pathname c) :verbose t)))
+
         (when (and package
                    (package-tests package))
-          (run-package-tests package)))
+          (run-package-tests package)))))
 
-      (setf *last-suite-report*
-            (list (= 0 (length (stats-failed *stats*)))
-                  (coerce (stats-passed *stats*) 'list)
-                  (coerce (stats-failed *stats*) 'list)))
+  (let ((passed (coerce (stats-passed *stats*) 'list))
+        (failed (coerce (stats-failed *stats*) 'list)))
 
-      (apply #'values *last-suite-report*))))
+    (format t "~2&Summary:~%")
+    (if failed
+        (format t "  ~D file~:*~P failed.~{~%    - ~A~}~%"
+                (length failed)
+                (mapcar #'test-name failed))
+        (format t "  All ~D file~:*~P passed.~%"
+                (length passed)))
+
+    (setf *last-suite-report*
+          (list (= 0 (length (stats-failed *stats*)))
+                passed
+                failed))
+    (apply #'values *last-suite-report*)))
