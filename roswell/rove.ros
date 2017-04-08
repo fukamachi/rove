@@ -14,6 +14,29 @@ exec ros -Q -- $0 "$@"
   (:use :cl))
 (in-package :ros.script.roswell/rove.3697685121)
 
+(defun run-file-tests (file)
+  (let ((tries-so-far (make-hash-table :test 'equalp))
+        (*error-output* (make-broadcast-stream)))
+    (tagbody retry
+       (handler-case
+           (asdf:test-system
+            (cond
+              ((equal (pathname-type file) "lisp")
+               (let ((*print-case* :downcase))
+                 (princ-to-string
+                  (second (asdf/package-inferred-system::file-defpackage-form file)))))
+              ((equal (pathname-type file) "asd")
+               (pathname-name file)))
+            :verbose nil)
+         (asdf:missing-dependency (c)
+           (let ((missing (asdf::missing-requires c)))
+             (when (gethash missing tries-so-far)
+               (error "Cannot load a dependency ~A, which is required by ~A"
+                      missing (asdf::missing-required-by c)))
+             (setf (gethash missing tries-so-far) t)
+             (ql:quickload missing :silent t)
+             (go retry)))))))
+
 (defun main (target &rest argv)
   (declare (ignore argv))
   (let ((file (probe-file target)))
@@ -25,22 +48,13 @@ exec ros -Q -- $0 "$@"
       (format *error-output* "~&Error: Invalid file type.~%")
       (uiop:quit -1))
 
-    (flet ((run-tests ()
-             (asdf:test-system
-              (cond
-                ((equal (pathname-type file) "lisp")
-                 (let ((*print-case* :downcase))
-                   (princ-to-string
-                    (second (asdf/package-inferred-system::file-defpackage-form file)))))
-                ((equal (pathname-type file) "asd")
-                 (pathname-name file))))))
-      (or #.(if (ros:getenv "COVERALLS")
-                `(,(intern (string :with-coveralls) :coveralls)
-                  (:exclude
-                   (,(intern (string :split-sequence) :split-sequence)
-                    #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
-                    :remove-empty-subseqs t))
-                  (run-tests))
-                '(run-tests))
-          (uiop:quit -1)))))
+    (or #.(if (ros:getenv "COVERALLS")
+              `(,(intern (string :with-coveralls) :coveralls)
+                (:exclude
+                 (,(intern (string :split-sequence) :split-sequence)
+                  #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
+                  :remove-empty-subseqs t))
+                (run-file-tests file))
+              '(run-file-tests file))
+        (uiop:quit -1))))
 ;;; vim: set ft=lisp lisp:
