@@ -35,7 +35,8 @@ exec ros -Q -- $0 "$@"
                       missing (asdf::missing-required-by c)))
              (setf (gethash missing tries-so-far) t)
              (ql:quickload missing :silent t)
-             (go retry)))))))
+             (go retry)))))
+    (first rove/core/suite:*last-suite-report*)))
 
 (defun main (target &rest argv)
   (declare (ignore argv))

@@ -8,8 +8,11 @@
                 #:test-name)
   (:import-from #:rove/core/suite/package
                 #:*execute-assertions*)
-  (:export #:run-system-tests))
+  (:export #:run-system-tests
+           #:*last-suite-report*))
 (in-package #:rove/core/suite)
+
+(defvar *last-suite-report* nil)
 
 (defun system-dependencies (system)
   (unless (typep system 'asdf:package-inferred-system)
@@ -82,6 +85,9 @@
                    (package-tests package))
           (run-package-tests package)))
 
-      (values (= 0 (length (stats-failed *stats*)))
-              (coerce (stats-passed *stats*) 'list)
-              (coerce (stats-failed *stats*) 'list)))))
+      (setf *last-suite-report*
+            (list (= 0 (length (stats-failed *stats*)))
+                  (coerce (stats-passed *stats*) 'list)
+                  (coerce (stats-failed *stats*) 'list)))
+
+      (apply #'values *last-suite-report*))))
