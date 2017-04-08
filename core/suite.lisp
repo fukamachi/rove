@@ -9,10 +9,15 @@
   (:import-from #:rove/core/suite/package
                 #:*execute-assertions*)
   (:export #:run-system-tests
-           #:*last-suite-report*))
+           #:*last-suite-report*
+           #:*rove-standard-output*
+           #:*rove-error-output*))
 (in-package #:rove/core/suite)
 
 (defvar *last-suite-report* nil)
+
+(defparameter *rove-standard-output* nil)
+(defparameter *rove-error-output* nil)
 
 (defun system-dependencies (system)
   (unless (typep system 'asdf:package-inferred-system)
@@ -43,16 +48,17 @@
 
     (let ((*stats* (or *stats*
                        (make-instance 'stats)))
-          (*execute-assertions* nil))
+          (*execute-assertions* nil)
+          (*standard-output* (or *rove-standard-output*
+                                 *standard-output*))
+          (*error-output* (or *rove-error-output*
+                              *error-output*)))
 
       (let* ((package-name (string-upcase (asdf:component-name system)))
              (package (find-package package-name)))
 
         #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
         #-quicklisp (asdf:load-system (asdf:component-name system))
-
-        (when package
-          (clear-package-tests package))
 
         ;; Loading dependencies beforehand
         (let ((deps (remove-if-not (lambda (dep)
@@ -61,25 +67,14 @@
           (dolist (dep deps)
             (let* ((package-name (string-upcase (asdf:component-name dep)))
                    (package (find-package package-name)))
-              (when package
-                (clear-package-tests package))
 
               #+quicklisp (ql:quickload (asdf:component-name dep) :silent t)
               #-quicklisp (asdf:load-system (asdf:component-name dep))
-
-              (dolist (c (asdf:component-children dep))
-                (when (typep c 'asdf:cl-source-file)
-                  (load (asdf:component-pathname c) :verbose t)))
 
               (unless package
                 (or (setf package (find-package package-name))
                     (error "Package ~A not found" package-name)))
               (run-package-tests package))))
-
-        ;; Loading CL-SOURCE-FILE
-        (dolist (c (asdf:component-children system))
-          (when (typep c 'asdf:cl-source-file)
-            (load (asdf:component-pathname c) :verbose t)))
 
         (when (and package
                    (package-tests package))

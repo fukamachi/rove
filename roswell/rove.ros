@@ -14,8 +14,16 @@ exec ros -Q -- $0 "$@"
   (:use :cl))
 (in-package :ros.script.roswell/rove.3697685121)
 
+(defun get-real-stream (stream)
+  (if (typep stream 'synonym-stream)
+      (symbol-value (synonym-stream-symbol stream))
+      stream))
+
 (defun run-file-tests (file)
   (let ((tries-so-far (make-hash-table :test 'equalp))
+        (rove/core/suite:*rove-standard-output* (get-real-stream *standard-output*))
+        (rove/core/suite:*rove-error-output* (get-real-stream *error-output*))
+        (*standard-output* (make-broadcast-stream))
         (*error-output* (make-broadcast-stream)))
     (tagbody retry
        (handler-case
@@ -26,8 +34,7 @@ exec ros -Q -- $0 "$@"
                  (princ-to-string
                   (second (asdf/package-inferred-system::file-defpackage-form file)))))
               ((equal (pathname-type file) "asd")
-               (pathname-name file)))
-            :verbose nil)
+               (pathname-name file))))
          (asdf:missing-dependency (c)
            (let ((missing (asdf::missing-requires c)))
              (when (gethash missing tries-so-far)

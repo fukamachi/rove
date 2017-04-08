@@ -30,10 +30,7 @@
       (setf package (find-package package-name)))
     (make-instance
      (intern (format nil "~A-~A" style '#:reporter) package)
-     :stream
-     (if (typep stream 'synonym-stream)
-         (symbol-value (synonym-stream-symbol stream))
-         stream))))
+     :stream stream)))
 
 (defgeneric print-message (reporter desc)
   (:method ((reporter reporter) desc)
