@@ -90,21 +90,21 @@
 
         (when (and package
                    (package-tests package))
-          (run-package-tests package)))))
+          (run-package-tests package)))
 
-  (let ((passed (coerce (stats-passed *stats*) 'list))
-        (failed (coerce (stats-failed *stats*) 'list)))
+      (let ((passed (coerce (stats-passed *stats*) 'list))
+            (failed (coerce (stats-failed *stats*) 'list)))
 
-    (format t "~2&Summary:~%")
-    (if failed
-        (format t "  ~D file~:*~P failed.~{~%    - ~A~}~%"
-                (length failed)
-                (mapcar #'test-name failed))
-        (format t "  All ~D file~:*~P passed.~%"
-                (length passed)))
+        (format t "~2&Summary:~%")
+        (if failed
+            (format t "  ~D file~:*~P failed.~{~%    - ~A~}~%"
+                    (length failed)
+                    (mapcar #'test-name failed))
+            (format t "  All ~D file~:*~P passed.~%"
+                    (length passed)))
 
-    (setf *last-suite-report*
-          (list (= 0 (length (stats-failed *stats*)))
-                passed
-                failed))
-    (apply #'values *last-suite-report*)))
+        (setf *last-suite-report*
+              (list (= 0 (length (stats-failed *stats*)))
+                    passed
+                    failed))
+        (apply #'values *last-suite-report*)))))
