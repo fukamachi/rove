@@ -12,6 +12,7 @@
            #:ng
            #:signals
            #:outputs
+           #:expands
            #:pass
            #:fail
            #:skip))
@@ -102,6 +103,22 @@
 
 (defmacro outputs (form content &optional (stream '*standard-output*))
   `(equal (output-of ,form ,stream) ,content))
+
+(defun equal* (x y)
+  (or (equal x y)
+      (and (consp x) (consp y)
+           (loop for (x1 . xs) on x
+                 for (y1 . ys) on y
+                 unless (or (equal* x1 y1)
+                            (and (symbolp x1) (symbolp y1)
+                                 (null (symbol-package x1))
+                                 (null (symbol-package y1))))
+                   do (return nil)
+                 when (and (null xs) (null ys))
+                   do (return t)))))
+
+(defmacro expands (form expanded-form &optional env)
+  `(equal* (macroexpand-1 ,form ,env) ,expanded-form))
 
 (defun pass (desc)
   (wrap-if-toplevel

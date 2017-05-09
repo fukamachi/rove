@@ -67,6 +67,19 @@ $ rove tests/request.lisp
 ;-> ✓ Expect (OUTPUTS (WRITE-STRING a) a) to be true.
 ```
 
+### expands (form expanded-form &optional env)
+
+```common-lisp
+(defmacro defun-addn (n)
+  (let ((m (gensym "m")))
+    `(defun ,(intern (format nil "ADD~A" n)) (,m)
+       (+ ,m ,n))))
+
+(ok (expands '(defun-addn 10)
+             `(defun add10 (#:m)
+                (+ #:m 10))))
+```
+
 ### pass (description)
 
 ```common-lisp

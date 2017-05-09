@@ -8,6 +8,7 @@
                 #:ng
                 #:signals
                 #:outputs
+                #:expands
                 #:pass
                 #:fail
                 #:skip)
@@ -34,6 +35,7 @@
            #:ng
            #:signals
            #:outputs
+           #:expands
            #:pass
            #:fail
            #:skip
