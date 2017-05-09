@@ -119,11 +119,12 @@ $ rove tests/request.lisp
     (ok (= (length (list 1 2 3)) 3))))
 ```
 
-### run (package &key style)
+### run (package &key style env)
 
 ```common-lisp
 (run :myapp/tests)
-(run :myapp/tests :spec)
+(run :myapp/tests :style :spec)
+(run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
 
 ## Examples

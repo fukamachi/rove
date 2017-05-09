@@ -30,6 +30,7 @@
                 #:*enable-colors*)
   (:import-from #:rove/reporter/spec
                 #:spec-reporter)
+  (:import-from #:uiop)
   (:export #:*debug-on-error*
            #:ok
            #:ng
@@ -42,6 +43,7 @@
            #:deftest
            #:testing
            #:run
+           #:*default-env*
 
            #:form-description
 
@@ -54,6 +56,21 @@
            #:*enable-colors*))
 (in-package #:rove/main)
 
-(defun run (target &key (style :spec))
-  (with-reporter style
-    (run-system-tests target)))
+(defvar *default-env* '())
+
+(defmacro with-local-envs (env &body body)
+  (let ((before-env (gensym "BEFORE-ENV"))
+        (k (gensym "K"))
+        (v (gensym "V")))
+    `(let ((,before-env
+             (loop for (,k . ,v) in ,env
+                   collect (cons ,k (or (uiop:getenv ,k) ""))
+                   do (setf (uiop:getenv ,k) ,v))))
+       (unwind-protect (progn ,@body)
+         (loop for (,k . ,v) in ,before-env
+               do (setf (uiop:getenv ,k) ,v))))))
+
+(defun run (target &key (style :spec) (env *default-env*))
+  (with-local-envs env
+    (with-reporter style
+      (run-system-tests target))))
