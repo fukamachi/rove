@@ -19,6 +19,16 @@
     (setf (reporter-stream reporter)
           (make-indent-stream stream))))
 
+(defun print-duration (duration stream)
+  (when duration
+    (let ((color (cond
+                   ((< 75 duration) :red)
+                   ((< (/ 75 2) duration) :yellow))))
+      (when color
+        (princ
+         (color-text color (format nil " (~Dms)" duration))
+         stream)))))
+
 (defmethod record ((reporter spec-reporter) (object passed-assertion))
   (call-next-method)
   (let ((stream (reporter-stream reporter)))
@@ -26,6 +36,7 @@
     (princ (color-text :green "✓ ") stream)
     (with-indent (stream +2)
       (princ (color-text :gray (assertion-description object)) stream)
+      (print-duration (assertion-duration object) stream)
       (fresh-line stream))))
 
 (defmethod record ((reporter spec-reporter) (object failed-assertion))
@@ -40,6 +51,7 @@
                            (1- (length (stats-failed (stats-context reporter))))
                            (assertion-description object)))
        stream)
+      (print-duration (assertion-duration object) stream)
       (fresh-line stream))))
 
 (defmethod record ((reporter spec-reporter) (object pending-assertion))

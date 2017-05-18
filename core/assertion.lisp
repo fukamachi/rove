@@ -36,10 +36,12 @@
         (result (gensym "RESULT"))
         (reason (gensym "REASON"))
         (stacks (gensym "STACKS"))
-        (e (gensym "E")))
+        (e (gensym "E"))
+        (start (gensym "START"))
+        (duration (gensym "DURATION")))
     (let* ((steps (form-steps form))
            (expanded-form (first steps)))
-      `(let (,values ,result)
+      `(let (,values ,result ,duration)
          (labels ((make-assertion (&optional ,reason ,stacks)
                     (make-instance (funcall ,class-fn ,result ,reason)
                                    :form ',form
@@ -49,18 +51,21 @@
                                                nil)
                                    :values ,values
                                    :reason ,reason
+                                   :duration ,duration
                                    :stacks ,stacks
                                    :desc ,desc))
                   (main ()
-                    ,@(cond
-                        ((or (not (consp expanded-form))
-                             (special-operator-p (first expanded-form))
-                             (macro-function (first expanded-form)))
-                         `((setf ,values nil)
-                           (setf ,result ,expanded-form)))
-                        (t
-                         `((setf ,values (list ,@(rest expanded-form)))
-                           (setf ,result (apply ',(first expanded-form) ,values)))))
+                    (let ((,start (get-internal-real-time)))
+                      ,@(cond
+                          ((or (not (consp expanded-form))
+                               (special-operator-p (first expanded-form))
+                               (macro-function (first expanded-form)))
+                           `((setf ,values nil)
+                             (setf ,result ,expanded-form)))
+                          (t
+                           `((setf ,values (list ,@(rest expanded-form)))
+                             (setf ,result (apply ',(first expanded-form) ,values)))))
+                      (setf ,duration (- (get-internal-real-time) ,start)))
                     (record *stats* (make-assertion))
                     ,result))
            (if *debug-on-error*
