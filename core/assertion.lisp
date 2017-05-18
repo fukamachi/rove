@@ -102,12 +102,22 @@
 (defmacro signals (form &optional (condition ''error))
   `(typep (signal-of ,form) ,condition))
 
+(defmethod form-description ((function (eql 'signals)) args values)
+  (format nil "Expect ~W to signal ~A."
+          (first args)
+          (or (second values) 'cl:error)))
+
 (defmacro output-of (form &optional (stream '*standard-output*))
   `(with-output-to-string (,stream)
      ,form))
 
 (defmacro outputs (form content &optional (stream '*standard-output*))
   `(equal (output-of ,form ,stream) ,content))
+
+(defmethod form-description ((function (eql 'outputs)) args values)
+  (format nil "Expect ~W to output ~S."
+          (first args)
+          (second values)))
 
 (defun equal* (x y)
   (or (equal x y)
@@ -124,6 +134,12 @@
 
 (defmacro expands (form expanded-form &optional env)
   `(equal* (macroexpand-1 ,form ,env) ,expanded-form))
+
+(defmethod form-description ((function (eql 'expands)) args values)
+  (declare (ignore values))
+  (format nil "Expect ~W to be expanded to ~W."
+          (first args)
+          (second args)))
 
 (defun pass (desc)
   (wrap-if-toplevel
