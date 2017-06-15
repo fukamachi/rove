@@ -43,6 +43,7 @@
            #:deftest
            #:testing
            #:run
+           #:with-local-envs
            #:*default-env*
 
            #:form-description
