@@ -24,17 +24,21 @@ exec ros -Q -- $0 "$@"
         (rove/core/suite:*rove-standard-output* (get-real-stream *standard-output*))
         (rove/core/suite:*rove-error-output* (get-real-stream *error-output*))
         (*standard-output* (make-broadcast-stream))
-        (*error-output* (make-broadcast-stream)))
+        (system-name (cond
+                       ((equal (pathname-type file) "lisp")
+                        (let ((*print-case* :downcase))
+                          (princ-to-string
+                           (second (asdf/package-inferred-system::file-defpackage-form file)))))
+                       ((equal (pathname-type file) "asd")
+                        (pathname-name file)))))
     (tagbody retry
        (handler-case
-           (asdf:test-system
-            (cond
-              ((equal (pathname-type file) "lisp")
-               (let ((*print-case* :downcase))
-                 (princ-to-string
-                  (second (asdf/package-inferred-system::file-defpackage-form file)))))
-              ((equal (pathname-type file) "asd")
-               (pathname-name file))))
+           (progn
+             (locally
+                 (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
+               (handler-bind ((cl:warning #'muffle-warning))
+                 (asdf:load-system system-name)))
+             (asdf:test-system system-name))
          (asdf:missing-dependency (c)
            (let ((missing (asdf::missing-requires c)))
              (when (gethash missing tries-so-far)
