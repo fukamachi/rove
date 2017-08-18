@@ -33,6 +33,22 @@
              deps)
      :from-end t)))
 
+;; XXX: Almost same as SYSTEM-DEPENDENCIES
+(defun system-components (system)
+  (unless (typep system 'asdf:package-inferred-system)
+    (error "~A isn't a package-inferred-system" system))
+
+  (let* ((deps (asdf:component-sideway-dependencies system))
+         (deps
+           (remove-if-not (lambda (dep-system)
+                            (and (typep dep-system 'asdf:package-inferred-system)
+                                 (system-component-p system dep-system)))
+                          (mapcar #'asdf:find-system deps))))
+    (remove-duplicates
+     (append (mapcan #'system-components deps)
+             deps)
+     :from-end t)))
+
 (defun system-component-p (system component)
   (let* ((system-name (asdf:component-name system))
          (comp-name (asdf:component-name component)))
@@ -60,12 +76,12 @@
 
         (unless already-loaded-p
           #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
-          #-quicklisp (asdf:load-system (asdf:component-name system)))
+          #-quicklisp (asdf:load-system (asdf:component-name system))
+          (unless package
+            (setf package (find-package package-name))))
 
         ;; Loading dependencies beforehand
-        (let ((deps (remove-if-not (lambda (dep)
-                                     (system-component-p system dep))
-                                   (system-dependencies system))))
+        (let ((deps (system-components system)))
           (dolist (dep deps)
             (let* ((package-name (string-upcase (asdf:component-name dep)))
                    (package (find-package package-name)))
@@ -77,8 +93,10 @@
                   (when (typep c 'asdf:cl-source-file)
                     (load (asdf:component-pathname c) :verbose t))))
 
-              (when package
-                (run-package-tests package)))))
+              (when (and package
+                         (package-tests package))
+                (run-package-tests package)
+                (clear-package-tests package)))))
 
         (when already-loaded-p
           (when package
@@ -90,7 +108,8 @@
 
         (when (and package
                    (package-tests package))
-          (run-package-tests package)))
+          (run-package-tests package)
+          (clear-package-tests package)))
 
       (let ((passed (coerce (stats-passed *stats*) 'list))
             (failed (coerce (stats-failed *stats*) 'list)))
