@@ -71,45 +71,27 @@
                               *error-output*)))
 
       (let* ((package-name (string-upcase (asdf:component-name system)))
-             (package (find-package package-name))
-             (already-loaded-p (asdf:component-loaded-p system)))
+             (package (find-package package-name)))
 
-        (unless already-loaded-p
-          #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
-          #-quicklisp (asdf:load-system (asdf:component-name system))
-          (unless package
-            (setf package (find-package package-name))))
+        #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
+        #-quicklisp (asdf:load-system (asdf:component-name system))
+        (unless package
+          (setf package (find-package package-name)))
 
         ;; Loading dependencies beforehand
         (let ((deps (system-components system)))
           (dolist (dep deps)
             (let* ((package-name (string-upcase (asdf:component-name dep)))
                    (package (find-package package-name)))
-
-              (when already-loaded-p
-                (when package
-                  (clear-package-tests package))
-                (dolist (c (asdf:component-children dep))
-                  (when (typep c 'asdf:cl-source-file)
-                    (load (asdf:component-pathname c) :verbose t))))
-
               (when (and package
                          (package-tests package))
-                (run-package-tests package)
-                (clear-package-tests package)))))
-
-        (when already-loaded-p
-          (when package
-            (clear-package-tests package))
-          ;; Loading CL-SOURCE-FILE
-          (dolist (c (asdf:component-children system))
-            (when (typep c 'asdf:cl-source-file)
-              (load (asdf:component-pathname c) :verbose t))))
+                (format t "~&;; testing '~(~A~)'~%" (package-name package))
+                (run-package-tests package)))))
 
         (when (and package
                    (package-tests package))
-          (run-package-tests package)
-          (clear-package-tests package)))
+          (format t "~&;; testing '~(~A~)'~%" (package-name package))
+          (run-package-tests package)))
 
       (let ((passed (coerce (stats-passed *stats*) 'list))
             (failed (coerce (stats-failed *stats*) 'list)))
