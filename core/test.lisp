@@ -31,23 +31,25 @@
            ,@body)))))
 
 (defmacro testing (desc &body body)
-  `(wrap-if-toplevel
-     (test-begin *stats* ,desc)
-     (unwind-protect
-          (if *debug-on-error*
-              (progn ,@body)
-              (block nil
-                (handler-bind ((error
-                                 (lambda (e)
-                                   (record *stats*
-                                           (make-instance 'failed-assertion
-                                                          :form t
-                                                          :reason e
-                                                          :stacks (dissect:stack)
-                                                          :desc "Raise an error while testing."))
-                                   (return nil))))
-                  ,@body)))
-       (test-finish *stats* ,desc))))
+  (let ((main (gensym "MAIN")))
+    `(wrap-if-toplevel
+       (test-begin *stats* ,desc)
+       (unwind-protect
+            (flet ((,main () ,@body))
+              (if *debug-on-error*
+                  (,main)
+                  (block nil
+                    (handler-bind ((error
+                                     (lambda (e)
+                                       (record *stats*
+                                               (make-instance 'failed-assertion
+                                                              :form t
+                                                              :reason e
+                                                              :stacks (dissect:stack)
+                                                              :desc "Raise an error while testing."))
+                                       (return nil))))
+                      (,main)))))
+         (test-finish *stats* ,desc)))))
 
 (defun package-tests (package)
   (reverse (gethash package *package-suites*)))
