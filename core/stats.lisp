@@ -14,7 +14,8 @@
            #:plan
            #:test-begin
            #:test-finish
-           #:toplevel-stats-p))
+           #:toplevel-stats-p
+           #:all-failed-assertions))
 (in-package #:rove/core/stats)
 
 (defvar *stats* nil)
@@ -106,12 +107,6 @@
   (null (slot-value stats 'contexts)))
 
 (defun all-failed-assertions (stats)
-  (labels ((assertions (object)
-             (typecase object
-               (failed-assertion (list object))
-               (failed-test
-                (apply #'append
-                       (mapcar #'assertions
-                               (test-failed-assertions object)))))))
-    (loop for object across (stats-failed stats)
-          append (assertions object))))
+  (loop for context in (cons stats
+                             (slot-value stats 'contexts))
+        append (coerce (stats-failed context) 'list)))

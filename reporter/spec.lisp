@@ -48,7 +48,7 @@
       (princ
        (color-text :red
                    (format nil "~D) ~A"
-                           (1- (length (stats-failed (stats-context reporter))))
+                           (1- (length (all-failed-assertions *stats*)))
                            (assertion-description object)))
        stream)
       (print-duration (assertion-duration object) stream)
