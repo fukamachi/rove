@@ -31,24 +31,58 @@
           (push step-form steps)))
       (list form)))
 
+(defparameter *fail* '#:interrupt-with-error)
+(defmacro form-inspect (form)
+  (let ((args-symbols (gensym "ARGS-SYMBOLS"))
+        (args-values (gensym "ARGS-VALUES"))
+        (result (gensym "RESULT"))
+        (res (gensym))
+        (symbs (gensym))
+        (vals (gensym)))
+    (if (and (consp form)
+             (symbolp (first form))
+             (not (special-operator-p (first form)))
+             (not (macro-function (first form))))
+        `(let* (,args-symbols
+                ,args-values
+                (,result
+                  (list
+                   ,@(loop for f in (rest form)
+                           collect
+                           `(multiple-value-bind (,res ,symbs ,vals)
+                                (form-inspect ,f)
+                              (setf ,args-symbols (append ,args-symbols ,symbs (list ',f)))
+                              (setf ,args-values (append ,args-values ,vals (list ,res)))
+                              ,res)))))
+           (values (if (find *fail* ,result :test 'eq)
+                       *fail*
+                       (restart-case (apply ',(first form) ,result)
+                         (cont () *fail*)))
+                   ,args-symbols
+                   ,args-values))
+        `(values ,form nil nil))))
+
 (defmacro %okng (form desc class-fn)
-  (let ((values (gensym "VALUES"))
+  (let ((args (gensym "ARGS"))
+        (values (gensym "VALUES"))
         (result (gensym "RESULT"))
         (reason (gensym "REASON"))
         (stacks (gensym "STACKS"))
         (e (gensym "E"))
         (start (gensym "START"))
-        (duration (gensym "DURATION")))
+        (duration (gensym "DURATION"))
+        (res (gensym))
+        (symbs (gensym))
+        (vals (gensym)))
     (let* ((steps (form-steps form))
            (expanded-form (first steps)))
-      `(let (,values ,result ,duration)
+      `(let (,args ,values ,result ,duration ,reason ,stacks)
          (labels ((make-assertion (&optional ,reason ,stacks)
-                    (make-instance (funcall ,class-fn ,result ,reason)
+                    (make-instance (funcall ,class-fn (not (or (null ,result)
+                                                               (eq ,result *fail*))) ,reason)
                                    :form ',form
                                    :steps ',(nreverse steps)
-                                   :args ',(if (consp expanded-form)
-                                               (rest expanded-form)
-                                               nil)
+                                   :args ,args
                                    :values ,values
                                    :reason ,reason
                                    :duration ,duration
@@ -56,26 +90,29 @@
                                    :desc ,desc))
                   (main ()
                     (let ((,start (get-internal-real-time)))
-                      ,@(cond
-                          ((or (not (consp expanded-form))
-                               (special-operator-p (first expanded-form))
-                               (macro-function (first expanded-form)))
-                           `((setf ,values nil)
-                             (setf ,result ,expanded-form)))
-                          (t
-                           `((setf ,values (list ,@(rest expanded-form)))
-                             (setf ,result (apply ',(first expanded-form) ,values)))))
+                      (multiple-value-bind (,res ,symbs ,vals)
+                          (form-inspect ,expanded-form)
+                        (setf ,result ,res)
+                        (setf ,values ,vals)
+                        (setf ,args ,symbs))
                       (setf ,duration (- (get-internal-real-time) ,start)))
-                    (record *stats* (make-assertion))
-                    ,result))
+                    (if (eq ,result *fail*)
+                        (progn
+                          (record *stats* (make-assertion ,reason ,stacks))
+                          nil)
+                        (progn
+                          (record *stats* (make-assertion))
+                          ,result))))
            (if *debug-on-error*
                (main)
-               (block nil
-                 (handler-bind ((error
-                                  (lambda (,e)
-                                    (record *stats* (make-assertion ,e (dissect:stack)))
-                                    (return nil))))
-                   (main)))))))))
+               (handler-bind ((error
+                                (lambda (,e)
+                                  (setf ,reason ,e)
+                                  (setf ,stacks (dissect:stack))
+                                  (let ((restart (find-restart 'cont)))
+                                    (when restart
+                                      (invoke-restart restart))))))
+                 (main))))))))
 
 (defmacro ok (form &optional desc)
   `(wrap-if-toplevel
