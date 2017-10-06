@@ -68,8 +68,9 @@
   (call-next-method)
   (let ((stream (reporter-stream reporter)))
     (fresh-line stream)
-    (princ (color-text :white test-name) stream)
-    (fresh-line stream)
+    (when test-name
+      (princ (color-text :white test-name) stream)
+      (fresh-line stream))
     (incf (stream-indent-level stream) 2)))
 
 (defmethod test-finish ((reporter spec-reporter) test-name)

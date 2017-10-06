@@ -75,7 +75,8 @@
 (defun run-test (fn &key (style :spec))
   "Run a single test function."
   (with-reporter style
-    (funcall fn)))
+    (testing nil
+      (funcall fn))))
 
 (defun run (target &key (style :spec) (env *default-env*))
   "Run a test package."
