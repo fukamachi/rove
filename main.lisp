@@ -42,6 +42,7 @@
            #:skip
            #:deftest
            #:testing
+           #:run-test
            #:run
            #:with-local-envs
            #:*default-env*
@@ -71,7 +72,13 @@
          (loop for (,k . ,v) in ,before-env
                do (setf (uiop:getenv ,k) ,v))))))
 
+(defun run-test (fn &key (style :spec))
+  "Run a single test function."
+  (with-reporter style
+    (funcall fn)))
+
 (defun run (target &key (style :spec) (env *default-env*))
+  "Run a test package."
   (with-local-envs env
     (with-reporter style
       (run-system-tests target))))
