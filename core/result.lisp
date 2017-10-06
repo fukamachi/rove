@@ -69,7 +69,8 @@
         (format stream "~{~S~^~%~}" steps)
         (loop for arg in args
               for value in values
-              do (format stream "~&    ~A = ~S" arg value)))
+              unless (constantp arg)
+                do (format stream "~&    ~A = ~S" arg value)))
       (call-next-method)))
 
 (defgeneric form-description (function args values)
