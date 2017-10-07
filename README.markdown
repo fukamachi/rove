@@ -130,3 +130,15 @@ $ rove tests/request.lisp
 ## Examples
 
 * [fukamachi/jsonrpc](https://github.com/fukamachi/jsonrpc)
+
+## Author
+
+* Eitaro Fukamachi (e.arrows@gmail.com)
+
+## Copyright
+
+Copyright (c) 2017 Eitaro Fukamachi
+
+## License
+
+Licensed under the BSD 3-Clause License.
