@@ -119,6 +119,32 @@ $ rove tests/request.lisp
     (ok (= (length (list 1 2 3)) 3))))
 ```
 
+### setup (&body body)
+
+Evaluates before testing the package once. This would be useful for initialization of tests, like establishment to the DB or creating a temporary directory.
+
+Use `(defhook :before ...)` instead for running before each test.
+
+```common-lisp
+(setup
+  (ensure-directories-exist *tmp-directory*))
+```
+
+### teardown (&body body)
+
+Evaluates after testing the package once. This is executed even when the test is interrupted with some reason. This would be useful for cleanup of tests, like disconnecting from DB or deleting a temporary directory.
+
+Use `(defhook :after ...)` instead for running after each test.
+
+```common-lisp
+(teardown
+  (uiop:delete-directory-tree *tmp-directory* validate t :if-does-not-exist :ignore))
+```
+
+### defhook (mode &body body)
+
+Evaluates before/after running a each test in the package.
+
 ### run (package &key style env)
 
 ```common-lisp

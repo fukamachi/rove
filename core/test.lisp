@@ -1,19 +1,18 @@
 (in-package #:cl-user)
 (defpackage #:rove/core/test
   (:use #:cl
-        #:rove/core/stats)
+        #:rove/core/stats
+        #:rove/core/suite/package)
   (:import-from #:rove/core/assertion
                 #:*debug-on-error*
                 #:failed-assertion)
-  (:import-from #:rove/core/suite/package
-                #:*execute-assertions*
-                #:wrap-if-toplevel
-                #:package-suite
-                #:suite-tests)
   (:import-from #:dissect
                 #:stack)
   (:export #:deftest
            #:testing
+           #:setup
+           #:teardown
+           #:defhook
            #:package-tests
            #:run-test
            #:run-package-tests))
@@ -51,16 +50,31 @@
                       (,main)))))
          (test-finish *stats* ,desc)))))
 
+(defmacro setup (&body body)
+  `(setf (suite-setup (package-suite *package*))
+         (lambda () ,@body)))
+
+(defmacro teardown (&body body)
+  `(setf (suite-teardown (package-suite *package*))
+         (lambda () ,@body)))
+
+(defmacro defhook (mode &body body)
+  (let ((main (gensym "MAIN")))
+    `(flet ((,main () ,@body))
+       (pushnew ',main
+                ,(ecase mode
+                   (:before `(suite-before-hooks *package*))
+                   (:after `(suite-after-hooks *package*)))))))
+
 (defun package-tests (package)
   (reverse (suite-tests (package-suite package))))
 
 (defun run-package-tests (package)
   (check-type package package)
   (let ((test-name (string-downcase (package-name package)))
-        (tests (package-tests package))
+        (suite (package-suite package))
         (*execute-assertions* t)
         (*package* package))
-    (test-begin *stats* test-name (length tests))
-    (unwind-protect (dolist (test tests)
-                      (funcall test))
+    (test-begin *stats* test-name (length (suite-tests suite)))
+    (unwind-protect (run-suite suite)
       (test-finish *stats* test-name))))

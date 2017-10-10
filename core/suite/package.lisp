@@ -3,20 +3,21 @@
   (:use #:cl)
   (:export #:*execute-assertions*
            #:wrap-if-toplevel
-           #:suite-setup-functions
-           #:suite-teardown-functions
+           #:suite-setup
+           #:suite-teardown
            #:suite-before-hooks
            #:suite-after-hooks
            #:suite-tests
-           #:package-suite))
+           #:package-suite
+           #:run-suite))
 (in-package #:rove/core/suite/package)
 
 (defvar *package-suites*
   (make-hash-table :test 'eq))
 
 (defstruct suite
-  setup-functions
-  teardown-functions
+  setup
+  teardown
   before-hooks
   after-hooks
   tests)
@@ -40,3 +41,17 @@
                       (suite-tests (package-suite *package*))
                       :test 'eq)
              (values))))))
+
+(defun run-suite (suite)
+  (unwind-protect
+       (progn
+         (when (suite-setup suite)
+           (funcall (suite-setup suite)))
+         (dolist (test (reverse (suite-tests suite)))
+           (unwind-protect
+                (progn
+                  (mapc #'funcall (reverse (suite-before-hooks suite)))
+                  (funcall test))
+             (mapc #'funcall (reverse (suite-after-hooks suite))))))
+    (when (suite-teardown suite)
+      (funcall (suite-teardown suite)))))

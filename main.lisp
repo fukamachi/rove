@@ -14,7 +14,10 @@
                 #:skip)
   (:import-from #:rove/core/test
                 #:deftest
-                #:testing)
+                #:testing
+                #:setup
+                #:teardown
+                #:defhook)
   (:import-from #:rove/core/suite
                 #:run-system-tests)
   (:import-from #:rove/core/stats
@@ -42,6 +45,9 @@
            #:skip
            #:deftest
            #:testing
+           #:setup
+           #:teardown
+           #:defhook
            #:run-test
            #:run
            #:with-local-envs
