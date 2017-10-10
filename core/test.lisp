@@ -6,15 +6,15 @@
                 #:*debug-on-error*
                 #:failed-assertion)
   (:import-from #:rove/core/suite/package
-                #:*package-suites*
                 #:*execute-assertions*
-                #:wrap-if-toplevel)
+                #:wrap-if-toplevel
+                #:package-suite
+                #:suite-tests)
   (:import-from #:dissect
                 #:stack)
   (:export #:deftest
            #:testing
            #:package-tests
-           #:clear-package-tests
            #:run-test
            #:run-package-tests))
 (in-package #:rove/core/test)
@@ -23,7 +23,7 @@
   (let ((test-name (let ((*print-case* :downcase))
                      (princ-to-string name))))
     `(progn
-       (pushnew ',name (gethash *package* *package-suites*)
+       (pushnew ',name (suite-tests (package-suite *package*))
                 :test 'eq)
 
        (defun ,name ()
@@ -52,11 +52,7 @@
          (test-finish *stats* ,desc)))))
 
 (defun package-tests (package)
-  (reverse (gethash package *package-suites*)))
-
-(defun clear-package-tests (package)
-  (check-type package package)
-  (remhash package *package-suites*))
+  (reverse (suite-tests (package-suite package))))
 
 (defun run-package-tests (package)
   (check-type package package)
