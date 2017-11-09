@@ -132,12 +132,18 @@
                (result 'failed-assertion)
                (t 'passed-assertion))))))
 
-(defmacro signal-of (form)
-  `(handler-case (progn ,form nil)
-     (condition (c) c)))
-
 (defmacro signals (form &optional (condition ''error))
-  `(typep (signal-of ,form) ,condition))
+  (let ((c (gensym))
+        (condition-type (gensym)))
+    `(let ((,condition-type ,condition))
+       (typep (block nil
+                (handler-bind ((condition
+                                 (lambda (,c)
+                                   (when (typep ,c ,condition-type)
+                                     (return ,c)))))
+                  ,form
+                  nil))
+              ,condition-type))))
 
 (defmethod form-description ((function (eql 'signals)) args values)
   (format nil "Expect ~W to signal ~A."
