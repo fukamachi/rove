@@ -85,7 +85,15 @@
     (declare (ignore values))
     (format nil "Expect ~A to be false." (first args))))
 
-(defun assertion-description (assertion)
+(defgeneric assertion-description (assertion)
+  (:documentation "Returns a string to print description of
+                   an object of class `assertion'.
+
+                   Useful, when you write your own assertions based
+                   on Rove's and want to customize their representation
+                   in test results."))
+
+(defmethod assertion-description ((assertion t))
   (with-slots (desc form values) assertion
     (or desc
         ;; Default description
