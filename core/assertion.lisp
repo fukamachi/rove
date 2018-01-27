@@ -133,6 +133,11 @@
                (t 'passed-assertion))))))
 
 (defmacro signals (form &optional (condition ''error))
+  "Returns t if given form raise condition of given type,
+   and nil otherwise.
+
+   Warning:
+   Use only in conjunction with `ok' macro to build an assertion."
   (let ((c (gensym))
         (condition-type (gensym)))
     `(let ((,condition-type ,condition))
