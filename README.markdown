@@ -12,6 +12,7 @@ This software is still ALPHA quality. The APIs will be likely to change.
 * Fewer dependencies (Only depends on Trivial-Gray-Streams and UIOP)
 * Report details of failure tests
 * Thread-support
+* Allow setup/teardown and before/after hooks
 
 ## Usage
 
