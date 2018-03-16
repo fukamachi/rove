@@ -1,6 +1,6 @@
 # Rove
 
-Rove is a unit testing framework for Common Lisp applications. This is intended to be the next major release of [Prove](https://github.com/fukamachi/prove).
+Rove is a unit testing framework for Common Lisp applications. This is intended to be a successor of [Prove](https://github.com/fukamachi/prove).
 
 ## Warning
 
@@ -10,9 +10,11 @@ This software is still ALPHA quality. The APIs will be likely to change.
 
 * Supports ASDF's package-inferred-system
 * Fewer dependencies (Only depends on Trivial-Gray-Streams and UIOP)
-* Report details of failure tests
+* Reports details of failure tests
 * Thread-support
-* Allow setup/teardown and before/after hooks
+* Allows setup/teardown and before/after hooks
+
+[Slides at Kansai Lisp #3](https://www.slideshare.net/fukamachi/rove-testing-is-a-pity-in-common-lisp)
 
 ## Usage
 
