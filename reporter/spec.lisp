@@ -112,8 +112,19 @@
                            (write-char #\Newline stream)
                            (princ
                             (color-text :white
-                                        (format nil "~A) ~A" i (assertion-description f)))
+                                        (format nil "~A) ~A"
+                                                i
+                                                (if (assertion-labels f)
+                                                    (format nil "~{~A~^ > ~}" (assertion-labels f))
+                                                    (assertion-description f))))
                             stream)
+                           (when (assertion-labels f)
+                             (with-indent (stream (+ (length (write-to-string i)) 2))
+                               (fresh-line stream)
+                               (princ
+                                (color-text :white
+                                            (assertion-description f))
+                                stream)))
                            (fresh-line stream)
                            (with-indent (stream (+ (length (write-to-string i)) 2))
                              (when (assertion-reason f)

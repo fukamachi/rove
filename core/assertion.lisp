@@ -87,6 +87,8 @@
                                    :reason ,reason
                                    :duration ,duration
                                    :stacks ,stacks
+                                   :labels (and *stats*
+                                                (stats-context-labels *stats*))
                                    :desc ,desc))
                   (main ()
                     (let ((,start (get-internal-real-time)))

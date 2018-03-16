@@ -9,6 +9,7 @@
            #:stats-pending
            #:stats-plan
            #:stats-context
+           #:stats-context-labels
            #:context-test-count
            #:record
            #:plan
@@ -31,6 +32,10 @@
          :initform nil
          :accessor stats-plan)
 
+   (name :initarg :name
+         :initform nil
+         :accessor stats-name)
+
    ;; TODO: lock
    (contexts :initform nil)))
 
@@ -46,14 +51,24 @@
     (or (first (slot-value stats 'contexts))
         stats)))
 
+(defgeneric stats-context-labels (stats)
+  (:documentation "Returns the labels of the current contexts (including nested ones)")
+  (:method ((stats stats))
+    (cdr
+     (reduce (lambda (labels label)
+               (cons label labels))
+             (slot-value stats 'contexts)
+             :key #'stats-name
+             :initial-value nil))))
+
 (defgeneric context-test-count (context)
   (:method ((context stats))
     (+ (length (stats-failed context))
        (length (stats-passed context))
        (length (stats-pending context)))))
 
-(defun new-context (stats)
-  (let ((context (make-instance 'stats)))
+(defun new-context (stats test-name)
+  (let ((context (make-instance 'stats :name test-name)))
     (push context (slot-value stats 'contexts))
     context))
 
@@ -77,7 +92,7 @@
 (defgeneric test-begin (stats test-name &optional count)
   (:method (stats test-name &optional count)
     (declare (ignore test-name))
-    (new-context stats)
+    (new-context stats test-name)
     (setf (stats-plan (stats-context stats)) count)
     (values)))
 

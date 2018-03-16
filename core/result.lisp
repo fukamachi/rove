@@ -16,6 +16,7 @@
            #:assertion-reason
            #:assertion-duration
            #:assertion-stacks
+           #:assertion-labels
            #:assertion-description
            #:dump-details
 
@@ -60,6 +61,9 @@
    (stacks :initarg :stacks
            :initform nil
            :reader assertion-stacks)
+   (labels :initarg :labels
+           :initform nil
+           :reader assertion-labels)
    (desc :initarg :desc
          :initform nil)))
 
