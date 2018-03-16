@@ -51,6 +51,7 @@
            #:run-test
            #:run
            #:with-local-envs
+           #:*default-reporter*
            #:*default-env*
 
            #:form-description
@@ -65,6 +66,7 @@
 (in-package #:rove/main)
 
 (defvar *default-env* '())
+(defvar *default-reporter* :spec)
 
 (defmacro with-local-envs (env &body body)
   (let ((before-env (gensym "BEFORE-ENV"))
@@ -84,7 +86,7 @@
     (testing nil
       (funcall fn))))
 
-(defun run (target &key (style :spec) (env *default-env*))
+(defun run (target &key (style *default-reporter*) (env *default-env*))
   "Run a test package."
   (with-local-envs env
     (with-reporter style

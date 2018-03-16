@@ -51,24 +51,59 @@ exec ros -Q -- $0 "$@"
              (go retry)))))
     (first rove/core/suite:*last-suite-report*)))
 
-(defun main (target &rest argv)
-  (declare (ignore argv))
-  (let ((file (probe-file target)))
-    (unless file
-      (format *error-output* "~&Error: ~A not found.~%" target)
-      (uiop:quit -1))
-    (unless (member (pathname-type file) '("lisp" "asd")
-                    :test #'string=)
-      (format *error-output* "~&Error: Invalid file type.~%")
-      (uiop:quit -1))
+(defmacro case-equal (keyform &body cases)
+  (let ((g-keyform (gensym "KEYFORM")))
+    `(let ((,g-keyform ,keyform))
+       (cond
+         ,@(loop for (case . body) in cases
+                 if (eq case 'otherwise)
+                   collect `(t ,@body)
+                 else
+                   collect `((find ,g-keyform ',(if (listp case)
+                                                    case
+                                                    (list case))
+                                   :test #'equal)
+                             ,@body))))))
 
-    (or #.(if (ros:getenv "COVERALLS")
-              `(,(intern (string :with-coveralls) :coveralls)
-                (:exclude
-                 (,(intern (string :split-sequence) :split-sequence)
-                  #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
-                  :remove-empty-subseqs t))
-                (run-file-tests file))
-              '(run-file-tests file))
-        (uiop:quit -1))))
+(defun parse-argv (argv)
+  (loop for option = (pop argv)
+        while option
+        do (case-equal option
+             (("-r" "--reporter")
+              (setf rove:*default-reporter* (intern (string-upcase (pop argv)) :keyword)))
+             (otherwise
+              (return (cons option argv))))))
+
+(defun print-usage ()
+  (format *error-output* "~&Usage: rove [option...] test-file
+
+Options:
+    -r, --reporter REPORTER-NAME    Reporter style (one of \"spec\" or \"none\")
+"))
+
+(defun main (&rest argv)
+  (let* ((target-files (parse-argv argv))
+         (target (first target-files)))
+    (unless target
+      (print-usage)
+      (uiop:quit -1))
+    (let ((file (probe-file target)))
+      (unless file
+        (format *error-output* "~&Error: ~A not found.~%" target)
+        (print-usage)
+        (uiop:quit -1))
+      (unless (member (pathname-type file) '("lisp" "asd")
+                      :test #'string=)
+        (format *error-output* "~&Error: Invalid file type.~%")
+        (uiop:quit -1))
+
+      (or #.(if (ros:getenv "COVERALLS")
+                `(,(intern (string :with-coveralls) :coveralls)
+                  (:exclude
+                   (,(intern (string :split-sequence) :split-sequence)
+                    #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
+                    :remove-empty-subseqs t))
+                  (run-file-tests file))
+                '(run-file-tests file))
+          (uiop:quit -1)))))
 ;;; vim: set ft=lisp lisp:

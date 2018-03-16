@@ -30,6 +30,7 @@ This software is still ALPHA quality. The APIs will be likely to change.
 
 ```
 $ rove tests/request.lisp
+$ rove -r spec tests/request.lisp
 ```
 
 ## API Reference
