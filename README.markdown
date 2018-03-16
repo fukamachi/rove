@@ -36,6 +36,12 @@ $ rove tests/request.lisp
 $ rove -r spec tests/request.lisp
 ```
 
+## Installation
+
+```
+$ ros install fukamachi/rove
+```
+
 ## API Reference
 
 ### ok (form &optional description)
