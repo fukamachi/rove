@@ -61,10 +61,10 @@
 (defmacro defhook (mode &body body)
   (let ((main (gensym "MAIN")))
     `(flet ((,main () ,@body))
-       (pushnew ',main
+       (pushnew #',main
                 ,(ecase mode
-                   (:before `(suite-before-hooks *package*))
-                   (:after `(suite-after-hooks *package*)))))))
+                   (:before `(suite-before-hooks (package-suite *package*)))
+                   (:after `(suite-after-hooks (package-suite *package*))))))))
 
 (defun package-tests (package)
   (reverse (suite-tests (package-suite package))))
