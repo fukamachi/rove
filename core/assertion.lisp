@@ -32,7 +32,7 @@
       (list form)))
 
 (defparameter *fail* '#:interrupt-with-error)
-(defmacro form-inspect (form)
+(defmacro form-inspect (form &environment env)
   (let ((args-symbols (gensym "ARGS-SYMBOLS"))
         (args-values (gensym "ARGS-VALUES"))
         (result (gensym "RESULT"))
@@ -42,7 +42,7 @@
     (if (and (consp form)
              (symbolp (first form))
              (not (special-operator-p (first form)))
-             (not (macro-function (first form))))
+             (not (macro-function (first form) env)))
         `(let* (,args-symbols
                 ,args-values
                 (,result
@@ -56,7 +56,7 @@
                               ,res)))))
            (values (if (find *fail* ,result :test 'eq)
                        *fail*
-                       (restart-case (apply ',(first form) ,result)
+                       (restart-case (apply #',(first form) ,result)
                          (cont () *fail*)))
                    ,args-symbols
                    ,args-values))
