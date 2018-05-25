@@ -91,7 +91,6 @@
 
 (defgeneric test-begin (stats test-name &optional count)
   (:method (stats test-name &optional count)
-    (declare (ignore test-name))
     (new-context stats test-name)
     (setf (stats-plan (stats-context stats)) count)
     (values)))
