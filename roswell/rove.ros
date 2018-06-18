@@ -7,8 +7,11 @@ exec ros -Q -- $0 "$@"
   (ros:ensure-asdf)
   (ql:quickload '(:rove) :silent t)
 
-  (when (ros:getenv "COVERALLS")
-    (ql:quickload '(:cl-coveralls :split-sequence) :silent t)))
+  #+sbcl
+  (when (and (stringp (ros:getenv "COVERAGE"))
+             (string/= (ros:getenv "COVERAGE") ""))
+    (require 'sb-cover)
+    (ql:quickload :split-sequence :silent t)))
 
 (defpackage :ros.script.roswell/rove.3697685121
   (:use :cl))
@@ -81,6 +84,22 @@ Options:
     -r, --reporter REPORTER-NAME    Reporter style (one of \"spec\" or \"none\")
 "))
 
+#+sbcl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (when (and (stringp (uiop:getenv "COVERAGE"))
+             (string/= (uiop:getenv "COVERAGE") ""))
+    (declaim (optimize sb-cover:store-coverage-data))))
+
+(defun pathname-in-directory-p (path directory)
+  (flet ((ensure-string (v)
+           (etypecase v
+             (string v)
+             (pathname (namestring v)))))
+    (let ((path (ensure-string path))
+          (directory (ensure-string directory)))
+      (and (< (length directory) (length path))
+           (string= directory path :end2 (length directory))))))
+
 (defun main (&rest argv)
   (let* ((target-files (parse-argv argv))
          (target (first target-files)))
@@ -97,13 +116,25 @@ Options:
         (format *error-output* "~&Error: Invalid file type.~%")
         (uiop:quit -1))
 
-      (or #.(if (ros:getenv "COVERALLS")
-                `(,(intern (string :with-coveralls) :coveralls)
-                  (:exclude
-                   (,(intern (string :split-sequence) :split-sequence)
-                    #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
-                    :remove-empty-subseqs t))
-                  (run-file-tests file))
-                '(run-file-tests file))
-          (uiop:quit -1)))))
+      (unwind-protect
+           (or (run-file-tests file)
+               (uiop:quit -1))
+        #+sbcl
+        (let ((dir (merge-pathnames #P"report/"))
+              (excludes (mapcar (lambda (exclude)
+                                  (uiop:ensure-directory-pathname
+                                   (merge-pathnames exclude (uiop:pathname-directory-pathname file))))
+                                (uiop:symbol-call :split-sequence :split-sequence
+                                                  #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
+                                                  :remove-empty-subseqs t))))
+          (format *error-output* "~&Coverage report: '~Acover-index.html'~%" dir)
+          (locally
+              (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
+            (handler-bind ((cl:warning #'muffle-warning))
+              (sb-cover:report dir
+                               :if-matches
+                               (lambda (path)
+                                 (not (some (lambda (exclude)
+                                              (pathname-in-directory-p path exclude))
+                                            excludes)))))))))))
 ;;; vim: set ft=lisp lisp:
