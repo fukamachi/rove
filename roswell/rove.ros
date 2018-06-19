@@ -120,21 +120,23 @@ Options:
            (or (run-file-tests file)
                (uiop:quit -1))
         #+sbcl
-        (let ((dir (merge-pathnames #P"report/"))
-              (excludes (mapcar (lambda (exclude)
-                                  (uiop:ensure-directory-pathname
-                                   (merge-pathnames exclude (uiop:pathname-directory-pathname file))))
-                                (uiop:symbol-call :split-sequence :split-sequence
-                                                  #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
-                                                  :remove-empty-subseqs t))))
-          (format *error-output* "~&Coverage report: '~Acover-index.html'~%" dir)
-          (locally
-              (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
-            (handler-bind ((cl:warning #'muffle-warning))
-              (sb-cover:report dir
-                               :if-matches
-                               (lambda (path)
-                                 (not (some (lambda (exclude)
-                                              (pathname-in-directory-p path exclude))
-                                            excludes)))))))))))
+        (when (and (stringp (ros:getenv "COVERAGE"))
+                   (string/= (ros:getenv "COVERAGE") ""))
+          (let ((dir (merge-pathnames #P"report/"))
+                (excludes (mapcar (lambda (exclude)
+                                    (uiop:ensure-directory-pathname
+                                     (merge-pathnames exclude (uiop:pathname-directory-pathname file))))
+                                  (uiop:symbol-call :split-sequence :split-sequence
+                                                    #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
+                                                    :remove-empty-subseqs t))))
+            (format *error-output* "~&Coverage report: '~Acover-index.html'~%" dir)
+            (locally
+                (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
+              (handler-bind ((cl:warning #'muffle-warning))
+                (sb-cover:report dir
+                                 :if-matches
+                                 (lambda (path)
+                                   (not (some (lambda (exclude)
+                                                (pathname-in-directory-p path exclude))
+                                              excludes))))))))))))
 ;;; vim: set ft=lisp lisp:
