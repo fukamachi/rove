@@ -137,5 +137,9 @@ Options:
                                  (lambda (path)
                                    (not (some (lambda (exclude)
                                                 (pathname-in-directory-p path exclude))
-                                              excludes))))))))))))
+                                              excludes)))
+                                 ;; ':if-matches' is added at SBCL 1.4.7
+                                 ;; https://github.com/sbcl/sbcl/commit/528cea75cb8ed72ce12114895293c48d8ebd13ec#diff-ea7b835dc99bccca83bb6a7a32fa83be
+                                 :allow-other-keys
+                                 (not (uiop:version<= "1.4.7" (lisp-implementation-version))))))))))))
 ;;; vim: set ft=lisp lisp:
