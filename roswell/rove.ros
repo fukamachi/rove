@@ -6,11 +6,10 @@ exec ros -Q -- $0 "$@"
 (progn ;;init forms
   (ros:ensure-asdf)
   (ql:quickload '(:rove) :silent t)
+  #+sbcl (require 'sb-cover)
 
-  #+sbcl
   (when (and (stringp (ros:getenv "COVERAGE"))
              (string/= (ros:getenv "COVERAGE") ""))
-    (require 'sb-cover)
     (ql:quickload :split-sequence :silent t)))
 
 (defpackage :ros.script.roswell/rove.3697685121
