@@ -45,6 +45,8 @@
                                                               :form t
                                                               :reason e
                                                               :stacks (dissect:stack)
+                                                              :labels (and *stats*
+                                                                           (stats-context-labels *stats*))
                                                               :desc "Raise an error while testing."))
                                        (return nil))))
                       (,main)))))
