@@ -115,7 +115,14 @@
                                         (format nil "~A) ~A"
                                                 i
                                                 (if (assertion-labels f)
-                                                    (format nil "~{~A~^ > ~}" (assertion-labels f))
+                                                    (with-output-to-string (s)
+                                                      (loop for i from 0
+                                                            for (label . rest) on (assertion-labels f)
+                                                            do (princ (make-string (* i 2) :initial-element #\Space) s)
+                                                               (when (< 0 i)
+                                                                 (princ "   › " s))
+                                                               (princ label s)
+                                                               (fresh-line s)))
                                                     (assertion-description f))))
                             stream)
                            (when (assertion-labels f)

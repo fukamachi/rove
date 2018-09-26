@@ -2,6 +2,7 @@
 (defpackage #:rove/core/suite
   (:use #:cl
         #:rove/core/assertion
+        #:rove/core/result
         #:rove/core/test
         #:rove/core/stats)
   (:import-from #:rove/core/result
@@ -78,34 +79,39 @@
         (unless package
           (setf package (find-package package-name)))
 
-        ;; Loading dependencies beforehand
-        (let ((deps (system-components system)))
-          (dolist (dep deps)
-            (let* ((package-name (string-upcase (asdf:component-name dep)))
-                   (package (find-package package-name)))
-              (when (and package
-                         (package-tests package))
-                (format t "~&;; testing '~(~A~)'~%" (package-name package))
-                (run-package-tests package)))))
+        (let ((*execute-assertions* t))
+          (testing (format nil "Testing System ~A" (asdf:component-name system))
+           ;; Loading dependencies beforehand
+           (let ((deps (system-components system)))
+             (dolist (dep deps)
+               (let* ((package-name (string-upcase (asdf:component-name dep)))
+                      (package (find-package package-name)))
+                 (when (and package
+                            (package-tests package))
+                   (format t "~2&;; testing '~(~A~)'~%" (package-name package))
+                   (run-package-tests package)))))
 
-        (when (and package
-                   (package-tests package))
-          (format t "~&;; testing '~(~A~)'~%" (package-name package))
-          (run-package-tests package)))
+           (when (and package
+                      (package-tests package))
+             (format t "~2&;; testing '~(~A~)'~%" (package-name package))
+             (run-package-tests package)))))
 
-      (let ((passed (coerce (stats-passed *stats*) 'list))
-            (failed (coerce (stats-failed *stats*) 'list)))
+      (let ((test (if (/= (length (stats-failed *stats*)) 0)
+                      (aref (stats-failed *stats*) 0)
+                      (aref (stats-passed *stats*) 0))))
+        (let ((passed (test-passed-assertions test))
+              (failed (test-failed-assertions test)))
 
-        (format t "~2&Summary:~%")
-        (if failed
-            (format t "  ~D file~:*~P failed.~{~%    - ~A~}~%"
-                    (length failed)
-                    (mapcar #'test-name failed))
-            (format t "  All ~D file~:*~P passed.~%"
-                    (length passed)))
+          (format t "~2&Summary:~%")
+          (if failed
+              (format t "  ~D file~:*~P failed.~{~%    - ~A~}~%"
+                      (length failed)
+                      (mapcar #'test-name failed))
+              (format t "  All ~D file~:*~P passed.~%"
+                      (length passed)))
 
-        (setf *last-suite-report*
-              (list (= 0 (length (stats-failed *stats*)))
-                    passed
-                    failed))
-        (apply #'values *last-suite-report*)))))
+          (setf *last-suite-report*
+                (list (= 0 (length failed))
+                      passed
+                      failed))
+          (apply #'values *last-suite-report*))))))
