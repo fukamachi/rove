@@ -1,5 +1,7 @@
 # Rove
 
+[![Quicklisp dist](http://quickdocs.org/badge/rove.svg)](http://quickdocs.org/rove/)
+
 Rove is a unit testing framework for Common Lisp applications. This is intended to be a successor of [Prove](https://github.com/fukamachi/prove).
 
 ## Warning
@@ -38,8 +40,8 @@ $ rove -r spec tests/request.lisp
 
 ## Installation
 
-```
-$ ros install fukamachi/rove
+```common-lisp
+(ql:quickload :rove)
 ```
 
 ## API Reference
