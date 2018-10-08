@@ -1,8 +1,10 @@
 (in-package #:cl-user)
 (defpackage #:rove/core/suite/package
   (:use #:cl)
-  (:export #:*execute-assertions*
+  (:export #:all-suites
+           #:*execute-assertions*
            #:wrap-if-toplevel
+           #:suite-name
            #:suite-setup
            #:suite-teardown
            #:suite-before-hooks
@@ -15,7 +17,12 @@
 (defvar *package-suites*
   (make-hash-table :test 'eq))
 
+(defun all-suites ()
+  (loop for suite being the hash-value of *package-suites*
+        collect suite))
+
 (defstruct suite
+  name
   setup
   teardown
   before-hooks
@@ -27,7 +34,7 @@
 (defun package-suite (package)
   (or (gethash package *package-suites*)
       (setf (gethash package *package-suites*)
-            (make-suite))))
+            (make-suite :name (package-name package)))))
 
 (defmacro wrap-if-toplevel (&body body)
   (let ((main (gensym "MAIN")))

@@ -8,7 +8,10 @@
   (:import-from #:rove/core/result
                 #:test-name)
   (:import-from #:rove/core/suite/package
-                #:*execute-assertions*)
+                #:*execute-assertions*
+                #:all-suites
+                #:suite-name
+                #:run-suite)
   (:export #:run-system-tests
            #:*last-suite-report*
            #:*rove-standard-output*
@@ -20,6 +23,7 @@
 (defparameter *rove-standard-output* nil)
 (defparameter *rove-error-output* nil)
 
+#+not-used
 (defun system-dependencies (system)
   (unless (typep system 'asdf:package-inferred-system)
     (error "~A isn't a package-inferred-system" system))
@@ -33,6 +37,14 @@
      (append (mapcan #'system-dependencies deps)
              deps)
      :from-end t)))
+
+(defun system-component-p (system component)
+  (let* ((system-name (asdf:component-name system))
+         (comp-name (asdf:component-name component)))
+    (and (< (length system-name) (length comp-name))
+         (string= system-name
+                  comp-name
+                  :end2 (length system-name)))))
 
 ;; XXX: Almost same as SYSTEM-DEPENDENCIES
 (defun system-components (system)
@@ -50,19 +62,8 @@
              deps)
      :from-end t)))
 
-(defun system-component-p (system component)
-  (let* ((system-name (asdf:component-name system))
-         (comp-name (asdf:component-name component)))
-    (and (< (length system-name) (length comp-name))
-         (string= system-name
-                  comp-name
-                  :end2 (length system-name)))))
-
 (defun run-system-tests (system-designator)
   (let ((system (asdf:find-system system-designator)))
-    (unless (typep system 'asdf:package-inferred-system)
-      (error "~A isn't a package-inferred-system" system))
-
     (let ((*stats* (or *stats*
                        (make-instance 'stats)))
           (*execute-assertions* nil)
@@ -71,30 +72,35 @@
           (*error-output* (or *rove-error-output*
                               *error-output*)))
 
-      (let* ((package-name (string-upcase (asdf:component-name system)))
-             (package (find-package package-name)))
+      #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
+      #-quicklisp (asdf:load-system (asdf:component-name system))
 
-        #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
-        #-quicklisp (asdf:load-system (asdf:component-name system))
-        (unless package
-          (setf package (find-package package-name)))
+      (let ((*execute-assertions* t))
+        (testing (format nil "Testing System ~A" (asdf:component-name system))
+          (typecase system
+            (asdf:package-inferred-system
+             (let* ((package-name (string-upcase (asdf:component-name system)))
+                    (package (find-package package-name)))
+               (unless package
+                 (setf package (find-package package-name)))
+               ;; Loading dependencies beforehand
+               (let ((deps (system-components system)))
+                 (dolist (dep deps)
+                   (let* ((package-name (string-upcase (asdf:component-name dep)))
+                          (package (find-package package-name)))
+                     (when (and package
+                                (package-tests package))
+                       (format t "~2&;; testing '~(~A~)'~%" (package-name package))
+                       (run-package-tests package)))))
 
-        (let ((*execute-assertions* t))
-          (testing (format nil "Testing System ~A" (asdf:component-name system))
-           ;; Loading dependencies beforehand
-           (let ((deps (system-components system)))
-             (dolist (dep deps)
-               (let* ((package-name (string-upcase (asdf:component-name dep)))
-                      (package (find-package package-name)))
-                 (when (and package
-                            (package-tests package))
-                   (format t "~2&;; testing '~(~A~)'~%" (package-name package))
-                   (run-package-tests package)))))
-
-           (when (and package
-                      (package-tests package))
-             (format t "~2&;; testing '~(~A~)'~%" (package-name package))
-             (run-package-tests package)))))
+               (when (and package
+                          (package-tests package))
+                 (format t "~2&;; testing '~(~A~)'~%" (package-name package))
+                 (run-package-tests package))))
+            (otherwise
+             (dolist (suite (all-suites))
+               (format t "~2&;; testing '~(~A~)'~%" (suite-name suite))
+               (run-suite suite))))))
 
       (let ((test (if (/= (length (stats-failed *stats*)) 0)
                       (aref (stats-failed *stats*) 0)
