@@ -167,7 +167,8 @@ Evaluates before/after running a each test in the package.
 
 ## Examples
 
-* [fukamachi/jsonrpc](https://github.com/fukamachi/jsonrpc)
+* [fukamachi/sanitized-params](https://github.com/fukamachi/sanitized-params)
+* [fukamachi/jsonrpc](https://github.com/fukamachi/jsonrpc) (package-inferred-system)
 
 ## Author
 
