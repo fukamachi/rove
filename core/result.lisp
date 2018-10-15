@@ -65,7 +65,9 @@
            :initform nil
            :reader assertion-labels)
    (desc :initarg :desc
-         :initform nil)))
+         :initform nil)
+   (negative :initarg :negative
+             :initform nil)))
 
 (defmethod print-object ((assertion assertion) stream)
   (if *print-assertion*
@@ -77,17 +79,20 @@
                 do (format stream "~&    ~A = ~S" arg value)))
       (call-next-method)))
 
-(defgeneric form-description (function args values)
-  (:method (function args values)
+(defgeneric form-description (function args values &key negative)
+  (:method (function args values &key negative)
     (declare (ignore values))
-    (format nil "Expect ~A to be true." `(,function ,@args)))
-  (:method ((function (eql 'cl:typep)) args values)
-    (format nil "Expect ~A to be an instance of ~A."
+    (format nil "Expect ~A to be ~:[true~;false~]." `(,function ,@args) negative))
+  (:method ((function (eql 'cl:typep)) args values &key negative)
+    (format nil "Expect ~A~:[~; not~] to be an instance of ~A."
             (first args)
+            negative
             (second values)))
-  (:method ((function (eql 'cl:not)) args values)
+  (:method ((function (eql 'cl:not)) args values &key negative)
     (declare (ignore values))
-    (format nil "Expect ~A to be false." (first args))))
+    (format nil "Expect ~A to be ~:[false~;true~]."
+            (first args)
+            negative)))
 
 (defgeneric assertion-description (assertion)
   (:documentation "Returns a string to print description of
@@ -98,12 +103,12 @@
                    in test results."))
 
 (defmethod assertion-description ((assertion t))
-  (with-slots (desc form values) assertion
+  (with-slots (desc form values negative) assertion
     (or desc
         ;; Default description
         (if (consp form)
-            (form-description (first form) (rest form) values)
-            (format nil "Expect ~A to be true." form)))))
+            (form-description (first form) (rest form) values :negative negative)
+            (format nil "Expect ~A to be ~:[true~;false~]." form negative)))))
 
 (defclass test ()
   ((name :initarg :name

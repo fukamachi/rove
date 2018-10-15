@@ -62,7 +62,7 @@
                    ,args-values))
         `(values ,form nil nil))))
 
-(defmacro %okng (form desc class-fn)
+(defmacro %okng (form desc class-fn positive)
   (let ((args (gensym "ARGS"))
         (values (gensym "VALUES"))
         (result (gensym "RESULT"))
@@ -89,7 +89,8 @@
                                    :stacks ,stacks
                                    :labels (and *stats*
                                                 (stats-context-labels *stats*))
-                                   :desc ,desc))
+                                   :desc ,desc
+                                   :negative ,(not positive)))
                   (main ()
                     (let ((,start (get-internal-real-time)))
                       (multiple-value-bind (,res ,symbs ,vals)
@@ -123,7 +124,8 @@
              (declare (ignore error))
              (if result
                  'passed-assertion
-                 'failed-assertion)))))
+                 'failed-assertion))
+           t)))
 
 (defmacro ng (form &optional desc)
   `(wrap-if-toplevel
@@ -132,7 +134,8 @@
              (cond
                (error 'failed-assertion)
                (result 'failed-assertion)
-               (t 'passed-assertion))))))
+               (t 'passed-assertion)))
+           nil)))
 
 (defmacro signals (form &optional (condition ''error))
   "Returns t if given form raise condition of given type,
@@ -152,9 +155,10 @@
                   nil))
               ,condition-type))))
 
-(defmethod form-description ((function (eql 'signals)) args values)
-  (format nil "Expect ~W to signal ~A."
+(defmethod form-description ((function (eql 'signals)) args values &key negative)
+  (format nil "Expect ~W~:[~; not~] to signal ~A."
           (first args)
+          negative
           (or (second values) 'cl:error)))
 
 (defmacro output-of (form &optional (stream '*standard-output*))
@@ -164,9 +168,10 @@
 (defmacro outputs (form content &optional (stream '*standard-output*))
   `(equal (output-of ,form ,stream) ,content))
 
-(defmethod form-description ((function (eql 'outputs)) args values)
-  (format nil "Expect ~W to output ~S."
+(defmethod form-description ((function (eql 'outputs)) args values &key negative)
+  (format nil "Expect ~W~:[~; not~] to output ~S."
           (first args)
+          negative
           (second values)))
 
 (defun equal* (x y)
@@ -185,10 +190,11 @@
 (defmacro expands (form expanded-form &optional env)
   `(equal* (macroexpand-1 ,form ,env) ,expanded-form))
 
-(defmethod form-description ((function (eql 'expands)) args values)
+(defmethod form-description ((function (eql 'expands)) args values &key negative)
   (declare (ignore values))
-  (format nil "Expect ~W to be expanded to ~W."
+  (format nil "Expect ~W~:[~; not~] to be expanded to ~W."
           (first args)
+          negative
           (second args)))
 
 (defun pass (desc)
