@@ -26,7 +26,8 @@
         (do ((step-form form (macroexpand-1 step-form)))
             ((or (eq (symbol-package (first step-form)) (find-package :cl))
                  (special-operator-p (first step-form))
-                 (not (macro-function (first step-form))))
+                 (not (macro-function (first step-form)))
+                 (get (first step-form) 'assertion))
              (cons step-form steps))
           (push step-form steps)))
       (list form)))
@@ -151,6 +152,7 @@
                   ,form
                   nil))
               ,condition-type))))
+(setf (get 'signals 'assertion) t)
 
 (defmethod form-description ((function (eql 'signals)) args values)
   (format nil "Expect ~W to signal ~A."
@@ -163,6 +165,7 @@
 
 (defmacro outputs (form content &optional (stream '*standard-output*))
   `(equal (output-of ,form ,stream) ,content))
+(setf (get 'outputs 'assertion) t)
 
 (defmethod form-description ((function (eql 'outputs)) args values)
   (format nil "Expect ~W to output ~S."
@@ -184,6 +187,7 @@
 
 (defmacro expands (form expanded-form &optional env)
   `(equal* (macroexpand-1 ,form ,env) ,expanded-form))
+(setf (get 'expands 'assertion) t)
 
 (defmethod form-description ((function (eql 'expands)) args values)
   (declare (ignore values))
