@@ -84,10 +84,17 @@
     (declare (ignore values))
     (format nil "Expect ~A to be ~:[true~;false~]." `(,function ,@args) negative))
   (:method ((function (eql 'cl:typep)) args values &key negative)
-    (format nil "Expect ~A~:[~; not~] to be an instance of ~A."
-            (first args)
-            negative
-            (second values)))
+    (declare (ignore values))
+    (let* ((type (second args))
+           (type
+             (if (and (consp type)
+                      (eq (first type) 'quote))
+                 (second type)
+                 type)))
+      (format nil "Expect ~A~:[~; not~] to be an instance of ~A."
+              (first args)
+              negative
+              type)))
   (:method ((function (eql 'cl:not)) args values &key negative)
     (declare (ignore values))
     (format nil "Expect ~A to be ~:[false~;true~]."
