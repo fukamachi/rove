@@ -1,7 +1,12 @@
 (in-package #:cl-user)
 (defpackage #:rove/core/suite/package
   (:use #:cl)
+  (:import-from #:rove/core/suite/file
+                #:resolve-file
+                #:file-package
+                #:system-packages)
   (:export #:all-suites
+           #:system-suites
            #:*execute-assertions*
            #:wrap-if-toplevel
            #:suite-name
@@ -21,6 +26,11 @@
   (loop for suite being the hash-value of *package-suites*
         collect suite))
 
+(defun system-suites (system)
+  (mapcar (lambda (package)
+            (gethash package *package-suites*))
+          (system-packages system)))
+
 (defstruct suite
   name
   setup
@@ -31,10 +41,17 @@
 
 (defvar *execute-assertions* t)
 
+(defun make-new-suite (package)
+  (let ((pathname (resolve-file (or *load-pathname* *compile-file-pathname*))))
+    (when (and pathname
+               (not (file-package pathname nil)))
+      (setf (file-package pathname) package)))
+  (make-suite :name (package-name package)))
+
 (defun package-suite (package)
   (or (gethash package *package-suites*)
       (setf (gethash package *package-suites*)
-            (make-suite :name (package-name package)))))
+            (make-new-suite package))))
 
 (defmacro wrap-if-toplevel (&body body)
   (let ((main (gensym "MAIN")))

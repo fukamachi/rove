@@ -9,9 +9,11 @@
                 #:test-name)
   (:import-from #:rove/core/suite/package
                 #:*execute-assertions*
-                #:all-suites
+                #:system-suites
                 #:suite-name
                 #:run-suite)
+  (:import-from #:rove/core/suite/file
+                #:system-packages)
   (:export #:run-system-tests
            #:*last-suite-report*
            #:*rove-standard-output*
@@ -22,45 +24,6 @@
 
 (defparameter *rove-standard-output* nil)
 (defparameter *rove-error-output* nil)
-
-#+not-used
-(defun system-dependencies (system)
-  (unless (typep system 'asdf:package-inferred-system)
-    (error "~A isn't a package-inferred-system" system))
-
-  (let* ((deps (asdf:component-sideway-dependencies system))
-         (deps
-           (remove-if-not (lambda (system)
-                            (typep system 'asdf:package-inferred-system))
-                          (mapcar #'asdf:find-system deps))))
-    (remove-duplicates
-     (append (mapcan #'system-dependencies deps)
-             deps)
-     :from-end t)))
-
-(defun system-component-p (system component)
-  (let* ((system-name (asdf:component-name system))
-         (comp-name (asdf:component-name component)))
-    (and (< (length system-name) (length comp-name))
-         (string= system-name
-                  comp-name
-                  :end2 (length system-name)))))
-
-;; XXX: Almost same as SYSTEM-DEPENDENCIES
-(defun system-components (system)
-  (unless (typep system 'asdf:package-inferred-system)
-    (error "~A isn't a package-inferred-system" system))
-
-  (let* ((deps (asdf:component-sideway-dependencies system))
-         (deps
-           (remove-if-not (lambda (dep-system)
-                            (and (typep dep-system 'asdf:package-inferred-system)
-                                 (system-component-p system dep-system)))
-                          (mapcar #'asdf:find-system deps))))
-    (remove-duplicates
-     (append (mapcan #'system-components deps)
-             deps)
-     :from-end t)))
 
 (defun run-system-tests (system-designator)
   (let ((system (asdf:find-system system-designator)))
@@ -84,21 +47,18 @@
                (unless package
                  (setf package (find-package package-name)))
                ;; Loading dependencies beforehand
-               (let ((deps (system-components system)))
-                 (dolist (dep deps)
-                   (let* ((package-name (string-upcase (asdf:component-name dep)))
-                          (package (find-package package-name)))
-                     (when (and package
-                                (package-tests package))
-                       (format t "~2&;; testing '~(~A~)'~%" (package-name package))
-                       (run-package-tests package)))))
+               (let ((pkgs (system-packages system)))
+                 (dolist (package pkgs)
+                   (when (package-tests package)
+                     (format t "~2&;; testing '~(~A~)'~%" (package-name package))
+                     (run-package-tests package))))
 
                (when (and package
                           (package-tests package))
                  (format t "~2&;; testing '~(~A~)'~%" (package-name package))
                  (run-package-tests package))))
             (otherwise
-             (dolist (suite (all-suites))
+             (dolist (suite (system-suites system))
                (format t "~2&;; testing '~(~A~)'~%" (suite-name suite))
                (run-suite suite))))))
 
