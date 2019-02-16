@@ -70,10 +70,10 @@
 
           (format t "~2&Summary:~%")
           (if failed
-              (format t "  ~D file~:*~P failed.~{~%    - ~A~}~%"
+              (format t "  ~D test~:*~P failed.~{~%    - ~A~}~%"
                       (length failed)
                       (mapcar #'test-name failed))
-              (format t "  All ~D file~:*~P passed.~%"
+              (format t "  All ~D test~:*~P passed.~%"
                       (length passed)))
 
           (setf *last-suite-report*
