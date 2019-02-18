@@ -47,7 +47,7 @@
 (defun package-inferred-system-component-names (system-designator)
   (let ((system (asdf:find-system system-designator)))
     (let ((already-seen (make-hash-table :test 'equal))
-          (deps (asdf:component-sideway-dependencies system))
+          (deps (mapcar #'string-downcase (asdf:component-sideway-dependencies system)))
           (system-name (asdf:component-name system)))
       (let ((system-component-names
               (remove-if-not (lambda (name)
