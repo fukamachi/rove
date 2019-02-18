@@ -76,19 +76,20 @@
   (make-hash-table :test 'equal))
 
 (defun file-package (file &optional (warn t))
-  (let ((package (gethash file *file-package*)))
+  (let ((package (gethash (uiop:native-namestring file) *file-package*)))
     (when (and (null package)
                warn)
-      (warn "No package found for file '~A'." file))))
+      (warn "No package found for file '~A'." file))
+    package))
 
 (defun (setf file-package) (package file)
-  (setf (gethash file *file-package*) package))
+  (setf (gethash (uiop:native-namestring file) *file-package*) package))
 
 (defun system-packages (system)
   (let ((files (system-files system)))
     (remove-duplicates
      (remove nil
              (mapcar (lambda (file)
-                       (gethash file *file-package*))
+                       (file-package file nil))
                      files))
      :from-end t)))
