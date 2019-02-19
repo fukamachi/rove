@@ -160,8 +160,10 @@ Evaluates before/after running a each test in the package.
 ### run (package &key style env)
 
 ```common-lisp
-(run :myapp/tests)
-(run :myapp/tests :style :spec)
+(run :myapp/tests)                              ; Defaults to spec-style output.
+(run :myapp/tests :style :spec)                 ; Detailed test output.
+(run :myapp/tests :style :dot)                  ; One-dot-per-test output.
+(run :myapp/tests :style :none)                 ; Minimal test output with filenames only.
 (run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
 
