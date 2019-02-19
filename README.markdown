@@ -170,6 +170,15 @@ Evaluates before/after running a each test in the package.
 * [fukamachi/sanitized-params](https://github.com/fukamachi/sanitized-params)
 * [fukamachi/jsonrpc](https://github.com/fukamachi/jsonrpc) (package-inferred-system)
 
+## Portability
+
+Developed for SBCL and tested successfully with:
+
+- ABCL 1.5.0 and 1.6.0-dev
+- CLISP 2.49.92
+- ClozureCL 1.11.5
+- ECL 16.1.3
+
 ## Author
 
 * Eitaro Fukamachi (e.arrows@gmail.com)
