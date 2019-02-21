@@ -167,6 +167,15 @@ Evaluates before/after running a each test in the package.
 (run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
 
+## Coverage report
+
+Coverage report can be enabled by setting the environment variable COVERAGE other than an empty string.
+This feature is an experimental and supported only for SBCL (The option is just ignored for other implementations).
+
+```
+$ COVERAGE=1 rove example.asd
+```
+
 ## Examples
 
 * [fukamachi/sanitized-params](https://github.com/fukamachi/sanitized-params)

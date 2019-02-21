@@ -16,6 +16,11 @@ exec ros -Q -- $0 "$@"
   (:use :cl))
 (in-package :ros.script.roswell/rove.3697685121)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun coverage-enabled-p ()
+    (and (stringp (uiop:getenv "COVERAGE"))
+         (string/= (uiop:getenv "COVERAGE") ""))))
+
 (defun get-real-stream (stream)
   (if (typep stream 'synonym-stream)
       (symbol-value (synonym-stream-symbol stream))
@@ -39,7 +44,7 @@ exec ros -Q -- $0 "$@"
              (locally
                  (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
                (handler-bind ((cl:warning #'muffle-warning))
-                 (asdf:load-system system-name)))
+                 (asdf:load-system system-name :force (coverage-enabled-p))))
              (asdf:test-system system-name)
              (unless rove/core/suite:*last-suite-report*
                (rove:run system-name)))
@@ -85,8 +90,7 @@ Options:
 
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (and (stringp (uiop:getenv "COVERAGE"))
-             (string/= (uiop:getenv "COVERAGE") ""))
+  (when (coverage-enabled-p)
     (declaim (optimize sb-cover:store-coverage-data))))
 
 (defun pathname-in-directory-p (path directory)
@@ -119,8 +123,7 @@ Options:
            (or (run-file-tests file)
                (uiop:quit -1))
         #+sbcl
-        (when (and (stringp (ros:getenv "COVERAGE"))
-                   (string/= (ros:getenv "COVERAGE") ""))
+        (when (coverage-enabled-p)
           (let ((dir (merge-pathnames #P"report/"))
                 (excludes (mapcar (lambda (exclude)
                                     (uiop:ensure-directory-pathname
