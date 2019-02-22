@@ -85,7 +85,7 @@ exec ros -Q -- $0 "$@"
   (format *error-output* "~&Usage: rove [option...] test-file
 
 Options:
-    -r, --reporter REPORTER-NAME    Reporter style (one of \"spec\" or \"none\")
+    -r, --reporter REPORTER-NAME    Reporter style (one of \"spec\", \"dot\", or \"none\")
 "))
 
 #+sbcl
