@@ -107,7 +107,8 @@
                         (progn
                           (record *stats* (make-assertion))
                           ,result))))
-           (if *debug-on-error*
+           (if (or *debug-on-error*
+                   (toplevel-stats-p *stats*))
                (main)
                (handler-bind ((error
                                 (lambda (,e)
