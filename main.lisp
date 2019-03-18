@@ -27,6 +27,7 @@
   (:import-from #:rove/core/result
                 #:form-description)
   (:import-from #:rove/reporter
+                #:use-reporter
                 #:with-reporter
                 #:diag
                 #:*report-stream*)
@@ -96,3 +97,6 @@
   (with-local-envs env
     (with-reporter style
       (run-system-tests target))))
+
+;; Enable the default reporter
+(use-reporter *default-reporter*)

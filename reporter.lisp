@@ -9,7 +9,8 @@
            #:reporter-stream
            #:print-message
            #:diag
-           #:with-reporter))
+           #:with-reporter
+           #:use-reporter))
 (in-package #:rove/reporter)
 
 (defvar *report-stream* (make-synonym-stream '*standard-output*))
@@ -46,3 +47,6 @@
             (append `((*stats* . ,*stats*))
                     bt:*default-special-bindings*)))
      ,@body))
+
+(defun use-reporter (style)
+  (setf *stats* (make-reporter style)))
