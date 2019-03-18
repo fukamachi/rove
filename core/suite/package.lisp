@@ -9,6 +9,8 @@
            #:system-suites
            #:*execute-assertions*
            #:wrap-if-toplevel
+           #:get-test
+           #:set-test
            #:suite-name
            #:suite-setup
            #:suite-teardown
@@ -53,6 +55,15 @@
       (setf (gethash package *package-suites*)
             (make-new-suite package))))
 
+(defun get-test (name)
+  (check-type name symbol)
+  (get name 'test))
+
+(defun set-test (name test-fn)
+  (pushnew name (suite-tests (package-suite *package*))
+           :test 'eq)
+  (setf (get name 'test) test-fn))
+
 (defmacro wrap-if-toplevel (&body body)
   (let ((main (gensym "MAIN")))
     `(flet ((,main () ,@body))
@@ -75,7 +86,7 @@
            (unwind-protect
                 (progn
                   (mapc #'funcall (reverse (suite-before-hooks suite)))
-                  (funcall test))
+                  (funcall (get-test test)))
              (mapc #'funcall (reverse (suite-after-hooks suite))))))
     (when (suite-teardown suite)
       (funcall (suite-teardown suite)))))

@@ -19,7 +19,8 @@
                 #:teardown
                 #:defhook)
   (:import-from #:rove/core/suite
-                #:run-system-tests)
+                #:run-system-tests
+                #:get-test)
   (:import-from #:rove/core/stats
                 #:*stats*
                 #:plan)
@@ -81,11 +82,14 @@
          (loop for (,k . ,v) in ,before-env
                do (setf (uiop:getenv ,k) ,v))))))
 
-(defun run-test (fn &key (style :spec))
+(defun run-test (test-name &key (style :spec))
   "Run a single test function."
-  (with-reporter style
-    (testing nil
-      (funcall fn))))
+  (let ((test (get-test test-name)))
+    (unless test
+      (error "No test found for ~S" test-name))
+    (with-reporter style
+      (testing nil
+        (funcall test)))))
 
 (defun run (target &key (style *default-reporter*) (env *default-env*))
   "Run a test package."

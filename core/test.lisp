@@ -21,13 +21,9 @@
 (defmacro deftest (name &body body)
   (let ((test-name (let ((*print-case* :downcase))
                      (princ-to-string name))))
-    `(progn
-       (pushnew ',name (suite-tests (package-suite *package*))
-                :test 'eq)
-
-       (defun ,name ()
-         (testing ,test-name
-           ,@body)))))
+    `(set-test ',name (lambda ()
+                        (testing ,test-name
+                          ,@body)))))
 
 (defmacro testing (desc &body body)
   (let ((main (gensym "MAIN")))

@@ -8,6 +8,7 @@
   (:import-from #:rove/core/result
                 #:test-name)
   (:import-from #:rove/core/suite/package
+                #:get-test
                 #:*execute-assertions*
                 #:system-suites
                 #:suite-name
@@ -17,7 +18,8 @@
   (:export #:run-system-tests
            #:*last-suite-report*
            #:*rove-standard-output*
-           #:*rove-error-output*))
+           #:*rove-error-output*
+           #:get-test))
 (in-package #:rove/core/suite)
 
 (defvar *last-suite-report* nil)
