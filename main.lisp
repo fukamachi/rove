@@ -64,6 +64,7 @@
 
            #:diag
            #:with-reporter
+           #:use-reporter
            #:*report-stream*
            #:*enable-colors*))
 (in-package #:rove/main)
