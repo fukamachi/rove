@@ -76,13 +76,13 @@
         (loop for arg in args
               for value in values
               unless (constantp arg)
-                do (format stream "~&    ~A = ~S" arg value)))
+                do (format stream "~&    ~A = ~W" arg value)))
       (call-next-method)))
 
 (defgeneric form-description (function args values &key negative)
   (:method (function args values &key negative)
     (declare (ignore values))
-    (format nil "Expect ~A to be ~:[true~;false~]." `(,function ,@args) negative))
+    (format nil "Expect ~W to be ~:[true~;false~]." `(,function ,@args) negative))
   (:method ((function (eql 'cl:typep)) args values &key negative)
     (declare (ignore values))
     (let* ((type (second args))
@@ -91,13 +91,13 @@
                       (eq (first type) 'quote))
                  (second type)
                  type)))
-      (format nil "Expect ~A~:[~; not~] to be an instance of ~A."
+      (format nil "Expect ~W~:[~; not~] to be an instance of ~A."
               (first args)
               negative
               type)))
   (:method ((function (eql 'cl:not)) args values &key negative)
     (declare (ignore values))
-    (format nil "Expect ~A to be ~:[false~;true~]."
+    (format nil "Expect ~W to be ~:[false~;true~]."
             (first args)
             negative)))
 
@@ -115,7 +115,7 @@
         ;; Default description
         (if (consp form)
             (form-description (first form) (rest form) values :negative negative)
-            (format nil "Expect ~A to be ~:[true~;false~]." form negative)))))
+            (format nil "Expect ~W to be ~:[true~;false~]." form negative)))))
 
 (defclass test ()
   ((name :initarg :name
