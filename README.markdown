@@ -6,11 +6,11 @@ Rove is a unit testing framework for Common Lisp applications. This is intended 
 
 ## Warning
 
-This software is still ALPHA quality. The APIs will be likely to change.
+This software is still BETA quality. The APIs will be likely to change.
 
 ## Differences from Prove
 
-* Supports ASDF's package-inferred-system
+* Supports ASDF package-inferred-system
 * Fewer dependencies (Only depends on Trivial-Gray-Streams and UIOP)
 * Reports details of failure tests
 * Thread-support

@@ -1,7 +1,7 @@
 (defsystem "rove"
   :class :package-inferred-system
-  :version "0.1.0"
+  :version "0.9.0"
   :author "Eitaro Fukamachi"
   :license "BSD 3-Clause"
   :depends-on ("rove/main")
-  :description "Small testing framework")
+  :description "Yet another testing framework intended to be a successor of Prove")
