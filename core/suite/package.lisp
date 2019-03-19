@@ -62,7 +62,8 @@
 (defun set-test (name test-fn)
   (pushnew name (suite-tests (package-suite *package*))
            :test 'eq)
-  (setf (get name 'test) test-fn))
+  (setf (get name 'test) test-fn)
+  name)
 
 (defmacro wrap-if-toplevel (&body body)
   (let ((main (gensym "MAIN")))
