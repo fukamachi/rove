@@ -81,10 +81,12 @@
                              (fresh-line stream)
                              (when (assertion-stacks f)
                                (write-char #\Newline stream)
-                               (loop repeat 15
-                                     for stack in (assertion-stacks f)
-                                     do (princ (color-text :gray (dissect:present-object stack nil)) stream)
-                                        (fresh-line stream))))))))))))
+                               (let ((*print-circle* nil))
+                                 (ignore-errors
+                                  (loop repeat 15
+                                        for stack in (assertion-stacks f)
+                                        do (princ (color-text :gray (dissect:present-object stack nil)) stream)
+                                           (fresh-line stream))))))))))))))
   (fresh-line stream)
   (unless (= 0 (length (stats-pending context)))
     (princ
