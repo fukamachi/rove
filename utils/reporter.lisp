@@ -16,13 +16,13 @@
       (if (= 0 (length (stats-failed context)))
           (princ
            (color-text :green
-                       (format nil "✓ ~D tests completed"
+                       (format nil "✓ ~D test~:*~P completed"
                                (length (stats-passed context))))
            stream)
           (progn
             (princ
              (color-text :red
-                         (format nil "× ~D of ~D tests failed"
+                         (format nil "× ~D of ~D test~:*~P failed"
                                  (length (stats-failed context))
                                  test-count))
              stream)
@@ -89,7 +89,7 @@
   (unless (= 0 (length (stats-pending context)))
     (princ
      (color-text :aqua
-                 (format nil "● ~D tests skipped"
+                 (format nil "● ~D test~:*~P skipped"
                          (length (stats-pending context))))
      stream)
     (fresh-line stream)))
