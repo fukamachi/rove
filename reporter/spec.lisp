@@ -71,14 +71,15 @@
     (fresh-line stream)
     (when test-name
       (princ (color-text :white test-name) stream)
-      (fresh-line stream))
-    (incf (stream-indent-level stream) 2)))
+      (fresh-line stream)
+      (incf (stream-indent-level stream) 2))))
 
 (defmethod test-finish ((reporter spec-reporter) test-name)
   (multiple-value-bind (passedp context) (call-next-method)
     (let ((stream (reporter-stream reporter))
           (test-count (context-test-count context)))
-      (decf (stream-indent-level stream) 2)
+      (when test-name
+        (decf (stream-indent-level stream) 2))
       (when (toplevel-stats-p reporter)
         (format-failure-tests stream context))
       (when (and (stats-plan context)
