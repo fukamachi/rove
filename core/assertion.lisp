@@ -57,8 +57,7 @@
                               ,res)))))
            (values (if (find *fail* ,result :test 'eq)
                        *fail*
-                       (restart-case (apply #',(first form) ,result)
-                         (cont () *fail*)))
+                       (apply #',(first form) ,result))
                    ,args-symbols
                    ,args-values))
         `(values ,form nil nil))))
@@ -79,8 +78,9 @@
            (expanded-form (first steps)))
       `(let (,args ,values ,result ,duration ,reason ,stacks)
          (labels ((make-assertion (&optional ,reason ,stacks)
-                    (make-instance (funcall ,class-fn (not (or (null ,result)
-                                                               (eq ,result *fail*))) ,reason)
+                    (make-instance (funcall ,class-fn (if (eq ,result *fail*)
+                                                          ,(not positive)
+                                                          (not (null ,result))) ,reason)
                                    :form ',form
                                    :steps ',(nreverse steps)
                                    :args ,args
@@ -95,7 +95,9 @@
                   (main ()
                     (let ((,start (get-internal-real-time)))
                       (multiple-value-bind (,res ,symbs ,vals)
-                          (form-inspect ,expanded-form)
+                          (restart-case
+                              (form-inspect ,expanded-form)
+                            (continue () *fail*))
                         (setf ,result ,res)
                         (setf ,values ,vals)
                         (setf ,args ,symbs))
@@ -114,7 +116,7 @@
                                 (lambda (,e)
                                   (setf ,reason ,e)
                                   (setf ,stacks (dissect:stack))
-                                  (let ((restart (find-restart 'cont)))
+                                  (let ((restart (find-restart 'continue)))
                                     (when restart
                                       (invoke-restart restart))))))
                  (main))))))))
