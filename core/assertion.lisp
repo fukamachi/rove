@@ -184,7 +184,7 @@
   (format nil "Expect ~W~:[~; not~] to output ~S."
           (first args)
           negative
-          (second values)))
+          (second args)))
 
 (defun equal* (x y)
   (or (equal x y)
