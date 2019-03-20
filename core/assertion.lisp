@@ -160,11 +160,17 @@
               ,condition-type))))
 (setf (get 'signals 'assertion) t)
 
+(defun unwrap-quoted (value)
+  (if (and (consp value)
+           (eq (first value) 'quote))
+      (second value)
+      value))
+
 (defmethod form-description ((function (eql 'signals)) args values &key negative)
   (format nil "Expect ~W~:[~; not~] to signal ~A."
           (first args)
           negative
-          (or (second values) 'cl:error)))
+          (or (unwrap-quoted (second args)) 'cl:error)))
 
 (defmacro output-of (form &optional (stream '*standard-output*))
   `(with-output-to-string (,stream)
