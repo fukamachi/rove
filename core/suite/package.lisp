@@ -50,10 +50,13 @@
       (setf (file-package pathname) package)))
   (make-suite :name (package-name package)))
 
-(defun package-suite (package)
-  (or (gethash package *package-suites*)
-      (setf (gethash package *package-suites*)
-            (make-new-suite package))))
+(defgeneric package-suite (package-designator)
+  (:method ((package package))
+    (or (gethash package *package-suites*)
+        (setf (gethash package *package-suites*)
+              (make-new-suite package))))
+  (:method (package)
+    (package-suite (find-package package))))
 
 (defun get-test (name)
   (check-type name symbol)
@@ -79,15 +82,18 @@
              (values))))))
 
 (defun run-suite (suite)
-  (unwind-protect
-       (progn
-         (when (suite-setup suite)
-           (funcall (suite-setup suite)))
-         (dolist (test (reverse (suite-tests suite)))
-           (unwind-protect
-                (progn
-                  (mapc #'funcall (reverse (suite-before-hooks suite)))
-                  (funcall (get-test test)))
-             (mapc #'funcall (reverse (suite-after-hooks suite))))))
-    (when (suite-teardown suite)
-      (funcall (suite-teardown suite)))))
+  (let ((suite (typecase suite
+                 (suite suite)
+                 (otherwise (package-suite suite)))))
+    (unwind-protect
+         (progn
+           (when (suite-setup suite)
+             (funcall (suite-setup suite)))
+           (dolist (test (reverse (suite-tests suite)))
+             (unwind-protect
+                  (progn
+                    (mapc #'funcall (reverse (suite-before-hooks suite)))
+                    (funcall (get-test test)))
+               (mapc #'funcall (reverse (suite-after-hooks suite))))))
+      (when (suite-teardown suite)
+        (funcall (suite-teardown suite))))))

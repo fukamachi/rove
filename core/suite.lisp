@@ -16,6 +16,7 @@
   (:import-from #:rove/core/suite/file
                 #:system-packages)
   (:export #:run-system-tests
+           #:run-suite
            #:*last-suite-report*
            #:*rove-standard-output*
            #:*rove-error-output*

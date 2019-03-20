@@ -20,6 +20,7 @@
                 #:defhook)
   (:import-from #:rove/core/suite
                 #:run-system-tests
+                #:run-suite
                 #:get-test)
   (:import-from #:rove/core/stats
                 #:*stats*
@@ -52,6 +53,7 @@
            #:teardown
            #:defhook
            #:run-test
+           #:run-suite
            #:run
            #:with-local-envs
            #:*default-reporter*
