@@ -7,9 +7,12 @@
 (in-package #:rove/misc/color)
 
 (defvar *enable-colors*
-  (not
-   (or (equal (uiop:getenv "EMACS") "t")
-       (uiop:getenv "INSIDE_EMACS"))))
+  (or (not
+       (or (equal (uiop:getenv "EMACS") "t")
+           (uiop:getenv "INSIDE_EMACS")))
+      (let ((enable-color-symbol (intern (string :*rove-enable-colors*) :cl-user)))
+        (and (boundp enable-color-symbol)
+             (symbol-value enable-color-symbol)))))
 
 (defparameter *color-code*
   `((:red    . 31)
