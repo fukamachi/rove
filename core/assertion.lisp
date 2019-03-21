@@ -18,7 +18,10 @@
            #:skip))
 (in-package #:rove/core/assertion)
 
-(defvar *debug-on-error* nil)
+(defvar *debug-on-error*
+  (let ((debug-on-error-symbol (intern (string :*rove-debug-on-error*) :cl-user)))
+    (and (boundp debug-on-error-symbol)
+	 (symbol-value debug-on-error-symbol))))
 
 (defun form-steps (form)
   (if (consp form)
