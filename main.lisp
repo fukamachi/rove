@@ -72,7 +72,11 @@
 (in-package #:rove/main)
 
 (defvar *default-env* '())
-(defvar *default-reporter* :spec)
+(defvar *default-reporter*
+  (or (let ((default-reporter-symbol (intern (string :*rove-default-reporter*) :cl-user)))
+        (and (boundp default-reporter-symbol)
+             (symbol-value default-reporter-symbol)))
+      :spec))
 
 (defmacro with-local-envs (env &body body)
   (let ((before-env (gensym "BEFORE-ENV"))
