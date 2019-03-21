@@ -49,12 +49,16 @@
          (test-finish *stats* ,desc)))))
 
 (defmacro setup (&body body)
-  `(setf (suite-setup (package-suite *package*))
-         (lambda () ,@body)))
+  `(progn
+     (setf (suite-setup (package-suite *package*))
+           (lambda () ,@body))
+     (values)))
 
 (defmacro teardown (&body body)
-  `(setf (suite-teardown (package-suite *package*))
-         (lambda () ,@body)))
+  `(progn
+     (setf (suite-teardown (package-suite *package*))
+           (lambda () ,@body))
+     (values)))
 
 (defmacro defhook (mode &body body)
   (let ((main (gensym "MAIN")))
@@ -62,7 +66,8 @@
        (pushnew #',main
                 ,(ecase mode
                    (:before `(suite-before-hooks (package-suite *package*)))
-                   (:after `(suite-after-hooks (package-suite *package*))))))))
+                   (:after `(suite-after-hooks (package-suite *package*)))))
+       (values))))
 
 (defun package-tests (package)
   (reverse (suite-tests (package-suite package))))
