@@ -103,46 +103,57 @@ Options:
       (and (< (length directory) (length path))
            (string= directory path :end2 (length directory))))))
 
+(defmacro with-handle-interrupt (&body body)
+  `(handler-case
+       (progn ,@body)
+     (#+sbcl sb-sys:interactive-interrupt
+      #+ccl ccl:interrupt-signal-condition
+      #+allegro excl:interrupt-signal
+      #+clisp system:simple-interrupt-condition
+      #+ecl ext:interactive-interrupt ()
+       (uiop:quit -1))))
+
 (defun main (&rest argv)
-  (let* ((target-files (parse-argv argv))
-         (target (first target-files)))
-    (unless target
-      (print-usage)
-      (uiop:quit -1))
-    (let ((file (probe-file target)))
-      (unless file
-        (format *error-output* "~&Error: ~A not found.~%" target)
+  (with-handle-interrupt
+    (let* ((target-files (parse-argv argv))
+           (target (first target-files)))
+      (unless target
         (print-usage)
         (uiop:quit -1))
-      (unless (member (pathname-type file) '("lisp" "asd")
-                      :test #'string=)
-        (format *error-output* "~&Error: Invalid file type.~%")
-        (uiop:quit -1))
+      (let ((file (probe-file target)))
+        (unless file
+          (format *error-output* "~&Error: ~A not found.~%" target)
+          (print-usage)
+          (uiop:quit -1))
+        (unless (member (pathname-type file) '("lisp" "asd")
+                        :test #'string=)
+          (format *error-output* "~&Error: Invalid file type.~%")
+          (uiop:quit -1))
 
-      (unwind-protect
-           (or (run-file-tests file)
-               (uiop:quit -1))
-        #+sbcl
-        (when (coverage-enabled-p)
-          (let ((dir (merge-pathnames #P"report/"))
-                (excludes (mapcar (lambda (exclude)
-                                    (uiop:ensure-directory-pathname
-                                     (merge-pathnames exclude (uiop:pathname-directory-pathname file))))
-                                  (uiop:symbol-call :split-sequence :split-sequence
-                                                    #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
-                                                    :remove-empty-subseqs t))))
-            (format *error-output* "~&Coverage report: '~Acover-index.html'~%" dir)
-            (locally
-                (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
-              (handler-bind ((cl:warning #'muffle-warning))
-                (sb-cover:report dir
-                                 :if-matches
-                                 (lambda (path)
-                                   (not (some (lambda (exclude)
-                                                (pathname-in-directory-p path exclude))
-                                              excludes)))
-                                 ;; ':if-matches' is added at SBCL 1.4.7
-                                 ;; https://github.com/sbcl/sbcl/commit/528cea75cb8ed72ce12114895293c48d8ebd13ec#diff-ea7b835dc99bccca83bb6a7a32fa83be
-                                 :allow-other-keys
-                                 (not (uiop:version<= "1.4.7" (lisp-implementation-version))))))))))))
+        (unwind-protect
+             (or (run-file-tests file)
+                 (uiop:quit -1))
+          #+sbcl
+          (when (coverage-enabled-p)
+            (let ((dir (merge-pathnames #P"report/"))
+                  (excludes (mapcar (lambda (exclude)
+                                      (uiop:ensure-directory-pathname
+                                       (merge-pathnames exclude (uiop:pathname-directory-pathname file))))
+                                    (uiop:symbol-call :split-sequence :split-sequence
+                                                      #\: (or (uiop:getenv "COVERAGE_EXCLUDE") "")
+                                                      :remove-empty-subseqs t))))
+              (format *error-output* "~&Coverage report: '~Acover-index.html'~%" dir)
+              (locally
+                  (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
+                (handler-bind ((cl:warning #'muffle-warning))
+                  (sb-cover:report dir
+                                   :if-matches
+                                   (lambda (path)
+                                     (not (some (lambda (exclude)
+                                                  (pathname-in-directory-p path exclude))
+                                                excludes)))
+                                   ;; ':if-matches' is added at SBCL 1.4.7
+                                   ;; https://github.com/sbcl/sbcl/commit/528cea75cb8ed72ce12114895293c48d8ebd13ec#diff-ea7b835dc99bccca83bb6a7a32fa83be
+                                   :allow-other-keys
+                                   (not (uiop:version<= "1.4.7" (lisp-implementation-version)))))))))))))
 ;;; vim: set ft=lisp lisp:
