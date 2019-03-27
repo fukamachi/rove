@@ -3,6 +3,7 @@
   (:use #:cl
         #:rove/core/stats
         #:rove/core/result)
+  (:shadow #:continue)
   (:import-from #:rove/core/suite/package
                 #:wrap-if-toplevel)
   (:import-from #:dissect
