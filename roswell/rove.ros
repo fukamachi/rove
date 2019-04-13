@@ -19,7 +19,7 @@ exec ros -Q -- $0 "$@"
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun coverage-enabled-p ()
     (and (stringp (uiop:getenv "COVERAGE"))
-         (string/= (uiop:getenv "COVERAGE") ""))))
+         (not (null (string/= (uiop:getenv "COVERAGE") ""))))))
 
 (defun get-real-stream (stream)
   (if (typep stream 'synonym-stream)
