@@ -191,17 +191,12 @@
           (second args)))
 
 (defun equal* (x y)
-  (or (equal x y)
-      (and (consp x) (consp y)
-           (loop for (x1 . xs) on x
-                 for (y1 . ys) on y
-                 unless (or (equal* x1 y1)
-                            (and (symbolp x1) (symbolp y1)
-                                 (null (symbol-package x1))
-                                 (null (symbol-package y1))))
-                   do (return nil)
-                 when (and (null xs) (null ys))
-                   do (return t)))))
+  (flet ((equal-or-both-uninterned-symbol-p (x1 y1)
+	   (or (equal x1 y1)
+	       (and (symbolp x1) (symbolp y1)
+                    (null (symbol-package x1))
+                    (null (symbol-package y1))))))
+    (tree-equal x y :test #'equal-or-both-uninterned-symbol-p)))
 
 (defmacro expands (form expanded-form &optional env)
   `(equal* (macroexpand-1 ,form ,env) ,expanded-form))
