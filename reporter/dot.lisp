@@ -12,12 +12,14 @@
 (defclass dot-reporter (reporter) ())
 
 (defmethod record :after ((reporter dot-reporter) (object passed-assertion))
-  (let ((stream (reporter-stream reporter))
-        (color
-          (if (< (/ 75 2) (assertion-duration object))
-              :yellow
-              :gray)))
-    (princ (color-text color ".") stream)))
+  (let ((duration (assertion-duration object)))
+    (when duration
+      (let ((stream (reporter-stream reporter))
+            (color
+              (if (< (/ 75 2) duration)
+                  :yellow
+                  :gray)))
+        (princ (color-text color ".") stream)))))
 
 (defmethod record :after ((reporter dot-reporter) (object failed-assertion))
   (let ((stream (reporter-stream reporter)))
