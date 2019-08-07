@@ -27,7 +27,7 @@
 
 (defmacro testing (desc &body body)
   (let ((main (gensym "MAIN")))
-    `(wrap-if-toplevel
+    `(progn
        (test-begin *stats* ,desc)
        (unwind-protect
             (flet ((,main () ,@body))
@@ -76,7 +76,6 @@
   (check-type package package)
   (let ((test-name (string-downcase (package-name package)))
         (suite (package-suite package))
-        (*execute-assertions* t)
         (*package* package))
     (test-begin *stats* test-name (length (suite-tests suite)))
     (unwind-protect (run-suite suite)

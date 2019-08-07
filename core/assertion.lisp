@@ -4,8 +4,6 @@
         #:rove/core/stats
         #:rove/core/result)
   (:shadow #:continue)
-  (:import-from #:rove/core/suite/package
-                #:wrap-if-toplevel)
   (:import-from #:dissect
                 #:stack)
   (:export #:*debug-on-error*
@@ -125,25 +123,27 @@
                                       (invoke-restart restart))))))
                  (main))))))))
 
+(defun ok-assertion-class (result error)
+  (declare (ignore error))
+  (if result
+    'passed-assertion
+    'failed-assertion))
+
 (defmacro ok (form &optional desc)
-  `(wrap-if-toplevel
-    (%okng ,form ,desc
-           (lambda (result error)
-             (declare (ignore error))
-             (if result
-                 'passed-assertion
-                 'failed-assertion))
-           t)))
+  `(%okng ,form ,desc
+          #'ok-assertion-class
+          t))
+
+(defun ng-assertion-class (result error)
+  (cond
+    (error 'failed-assertion)
+    (result 'failed-assertion)
+    (t 'passed-assertion)))
 
 (defmacro ng (form &optional desc)
-  `(wrap-if-toplevel
-    (%okng ,form ,desc
-           (lambda (result error)
-             (cond
-               (error 'failed-assertion)
-               (result 'failed-assertion)
-               (t 'passed-assertion)))
-           nil)))
+  `(%okng ,form ,desc
+          #'ng-assertion-class
+          nil))
 
 (defmacro signals (form &optional (condition ''error))
   "Returns t if given form raise condition of given type,
@@ -210,25 +210,22 @@
           (second args)))
 
 (defun pass (desc)
-  (wrap-if-toplevel
-   (record *stats*
-           (make-instance 'passed-assertion
-                          :form t
-                          :desc desc))
-   t))
+  (record *stats*
+          (make-instance 'passed-assertion
+                         :form t
+                         :desc desc))
+  t)
 
 (defun fail (desc)
-  (wrap-if-toplevel
-   (record *stats*
-           (make-instance 'failed-assertion
-                          :form t
-                          :desc desc))
-   nil))
+  (record *stats*
+          (make-instance 'failed-assertion
+                         :form t
+                         :desc desc))
+  nil)
 
 (defun skip (desc)
-  (wrap-if-toplevel
-   (record *stats*
-           (make-instance 'pending-assertion
-                          :form t
-                          :desc desc))
-   t))
+  (record *stats*
+          (make-instance 'pending-assertion
+                         :form t
+                         :desc desc))
+  t)
