@@ -7,8 +7,6 @@
                 #:system-packages)
   (:export #:all-suites
            #:system-suites
-           #:*execute-assertions*
-           #:wrap-if-toplevel
            #:get-test
            #:set-test
            #:suite-name
@@ -41,8 +39,6 @@
   after-hooks
   tests)
 
-(defvar *execute-assertions* t)
-
 (defun make-new-suite (package)
   (let ((pathname (resolve-file (or *load-pathname* *compile-file-pathname*))))
     (when (and pathname
@@ -67,19 +63,6 @@
            :test 'eq)
   (setf (get name 'test) test-fn)
   name)
-
-(defmacro wrap-if-toplevel (&body body)
-  (let ((main (gensym "MAIN")))
-    `(flet ((,main () ,@body))
-       (if *execute-assertions*
-           (,main)
-           (progn
-             (pushnew (lambda ()
-                        (let ((*execute-assertions* t))
-                          (,main)))
-                      (suite-tests (package-suite *package*))
-                      :test 'eq)
-             (values))))))
 
 (defun run-suite (suite)
   (let ((suite (typecase suite
