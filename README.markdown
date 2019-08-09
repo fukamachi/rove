@@ -176,6 +176,24 @@ This feature is an experimental and supported only for SBCL (The option is just 
 $ COVERAGE=1 rove example.asd
 ```
 
+## FAQ
+
+### Q. How to run tests when loading files?
+
+Add `(rove:run-suite *package*)` at the end of test files.
+
+```common-lisp
+(defpackage #:rove-example
+  (:use #:cl
+        #:rove))
+(in-package #:rove-example)
+
+(deftest example-test
+  (ok (= 1 1)))
+
+(run-suite *package*)
+```
+
 ## Examples
 
 * [fukamachi/sanitized-params](https://github.com/fukamachi/sanitized-params)
