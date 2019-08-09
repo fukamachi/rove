@@ -14,7 +14,8 @@
 (defmethod record :after ((reporter dot-reporter) (object passed-assertion))
   (let ((stream (reporter-stream reporter))
         (color
-          (if (< (/ 75 2) (assertion-duration object))
+          (if (and (assertion-duration object)
+                   (< (/ 75 2) (assertion-duration object)))
               :yellow
               :gray)))
     (princ (color-text color ".") stream)))
