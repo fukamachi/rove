@@ -78,6 +78,8 @@ exec ros -Q -- $0 "$@"
         do (case-equal option
              (("-r" "--reporter")
               (setf rove:*default-reporter* (intern (string-upcase (pop argv)) :keyword)))
+             (("--disable-colors")
+              (setf rove:*enable-colors* nil))
              (otherwise
               (return (cons option argv))))))
 
@@ -86,6 +88,7 @@ exec ros -Q -- $0 "$@"
 
 Options:
     -r, --reporter REPORTER-NAME    Reporter style (one of \"spec\", \"dot\", or \"none\")
+    --disable-colors                Turn off colors
 "))
 
 #+sbcl
