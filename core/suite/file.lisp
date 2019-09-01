@@ -26,7 +26,11 @@
            :type "lisp"
            :defaults pathname
            :directory (cons :absolute
-                            (nthcdr (length (pathname-directory asdf:*user-cache*))
+                            (nthcdr (+ (length (pathname-directory asdf:*user-cache*))
+                                       ;; Omit also pathname-device
+                                       (if (pathname-device pathname)
+                                           1
+                                           0))
                                     (pathname-directory pathname))))
           (uiop:lispize-pathname pathname)))))
 
