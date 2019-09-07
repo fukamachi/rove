@@ -15,15 +15,28 @@
            #:defhook
            #:package-tests
            #:run-test
-           #:run-package-tests))
+           #:run-package-tests
+           #:*default-test-compilation-time*))
 (in-package #:rove/core/test)
 
-(defmacro deftest (name &body body)
-  (let ((test-name (let ((*print-case* :downcase))
-                     (princ-to-string name))))
-    `(set-test ',name (lambda ()
-                        (testing ,test-name
-                          ,@body)))))
+(defvar *default-test-compilation-time* :definition-time)
+
+(defmacro deftest (name-and-options &body body)
+  (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
+      (if (consp name-and-options)
+          name-and-options
+          (list name-and-options))
+    (check-type compile-at (member :run-time :definition-time))
+    (let ((test-name (let ((*print-case* :downcase))
+                       (princ-to-string name))))
+      `(set-test ',name
+                 ,(if (eq compile-at :run-time)
+                    `(lambda ()
+                       (funcall (compile nil '(lambda ()
+                                                (testing ,test-name
+                                                         ,@body)))))
+                    `(lambda ()
+                       (testing ,test-name ,@body)))))))
 
 (defmacro testing (desc &body body)
   (let ((main (gensym "MAIN")))

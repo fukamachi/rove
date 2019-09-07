@@ -17,7 +17,8 @@
                 #:testing
                 #:setup
                 #:teardown
-                #:defhook)
+                #:defhook
+                #:*default-test-compilation-time*)
   (:import-from #:rove/core/suite
                 #:run-system-tests
                 #:run-suite
