@@ -76,7 +76,7 @@
                              (fresh-line stream))
                            (with-indent (stream +2)
                              (princ
-                              (color-text :gray (princ-to-string f))
+                              (color-text :gray (prin1-to-string f))
                               stream)
                              (fresh-line stream)
                              (when (assertion-stacks f)
