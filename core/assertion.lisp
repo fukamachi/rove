@@ -182,7 +182,7 @@
 
 (defmacro outputs (form content &optional (stream '*standard-output*))
   `(equal (output-of ,form ,stream) ,content))
-(setf (get 'outputs 'assertion) t)
+(setf (get 'outputs 'assertion) nil)
 
 (defmethod form-description ((function (eql 'outputs)) args values &key negative)
   (format nil "Expect ~W~:[~; not~] to output ~S."
@@ -200,7 +200,7 @@
 
 (defmacro expands (form expanded-form &optional env)
   `(equal* (macroexpand-1 ,form ,env) ,expanded-form))
-(setf (get 'expands 'assertion) t)
+(setf (get 'expands 'assertion) nil)
 
 (defmethod form-description ((function (eql 'expands)) args values &key negative)
   (declare (ignore values))
