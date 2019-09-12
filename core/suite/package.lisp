@@ -51,8 +51,11 @@
     (or (gethash package *package-suites*)
         (setf (gethash package *package-suites*)
               (make-new-suite package))))
-  (:method (package)
-    (package-suite (find-package package))))
+  (:method (package-name)
+    (let ((package (find-package package-name)))
+      (unless package
+        (error "No package '~A' found" package-name))
+      (package-suite package))))
 
 (defun get-test (name)
   (check-type name symbol)
