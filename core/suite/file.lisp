@@ -22,16 +22,15 @@
       (if (eql (search (namestring asdf:*user-cache*)
                        (namestring pathname))
                0)
-          (make-pathname
-           :type "lisp"
-           :defaults pathname
-           :directory (cons :absolute
-                            (nthcdr (+ (length (pathname-directory asdf:*user-cache*))
-                                       ;; Omit also pathname-device
-                                       (if (pathname-device pathname)
-                                           1
-                                           0))
-                                    (pathname-directory pathname))))
+          (let* ((directories (nthcdr (length (pathname-directory asdf:*user-cache*))
+                                      (pathname-directory pathname)))
+                 (device (when (pathname-device pathname)
+                           (pop directories))))
+            (make-pathname
+             :type "lisp"
+             :defaults pathname
+             :device device
+             :directory (cons :absolute directories)))
           (uiop:lispize-pathname pathname)))))
 
 (defun system-component-p (system-name component-name)
