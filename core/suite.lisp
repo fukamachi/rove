@@ -27,12 +27,22 @@
 (defparameter *rove-standard-output* nil)
 (defparameter *rove-error-output* nil)
 
+(define-condition system-tests-failure (asdf:test-op-test-failures)
+  ((test-report :initarg :test-report
+                :reader system-tests-failure-report))
+  (:report
+   (lambda (condition stream)
+     (write-string (system-tests-failure-report condition) stream))))
+
 (defun run-system-tests (system-designator)
-  (let ((system (asdf:find-system system-designator)))
+  (let ((system (asdf:find-system system-designator))
+        (test-report-stream (make-string-output-stream)))
     (let ((*stats* (or *stats*
                        (make-instance 'stats)))
-          (*standard-output* (or *rove-standard-output*
-                                 *standard-output*))
+          (*standard-output* (make-broadcast-stream
+                              (or *rove-standard-output*
+                                  *standard-output*)
+                              test-report-stream))
           (*error-output* (or *rove-error-output*
                               *error-output*)))
 
@@ -75,6 +85,13 @@
                       (mapcar #'test-name failed))
               (format t "  All ~D test~:*~P passed.~%"
                       (length passed)))
+
+          (cond (failed
+                 (signal 'system-tests-failure
+                         :test-report (get-output-stream-string test-report-stream)))
+                ((= 0 (length passed))
+                 (signal 'system-tests-failure
+                         :test-report "No tests ran.")))
 
           (setf *last-suite-report*
                 (list (= 0 (length failed))
