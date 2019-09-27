@@ -29,7 +29,7 @@
 
 (define-condition system-tests-failure (asdf:test-op-test-failures)
   ((test-report :initarg :test-report
-                :reader system-tests-failure-report))
+                :reader  system-tests-failure-report))
   (:report
    (lambda (condition stream)
      (write-string (system-tests-failure-report condition) stream))))
@@ -75,20 +75,25 @@
       (let ((test (if (/= (length (stats-failed *stats*)) 0)
                       (aref (stats-failed *stats*) 0)
                       (aref (stats-passed *stats*) 0))))
-        (let ((passed (test-passed-assertions test))
-              (failed (test-failed-assertions test)))
+        (let* ((passed (test-passed-assertions test))
+               (failed (test-failed-assertions test))
+               (failed-test-names (mapcar #'test-name failed)))
 
           (format t "~2&Summary:~%")
           (if failed
               (format t "  ~D test~:*~P failed.~{~%    - ~A~}~%"
                       (length failed)
-                      (mapcar #'test-name failed))
+                      failed-test-names)
               (format t "  All ~D test~:*~P passed.~%"
                       (length passed)))
 
           (cond (failed
                  (signal 'system-tests-failure
-                         :test-report (get-output-stream-string test-report-stream)))
+                         :test-report       (get-output-stream-string
+                                             test-report-stream)
+                         :tests-run-count   (+ (length passed)
+                                               (length failed))
+                         :failed-test-names failed-test-names))
                 ((= 0 (length passed))
                  (signal 'system-tests-failure
                          :test-report "No tests ran.")))
