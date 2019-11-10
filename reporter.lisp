@@ -28,9 +28,9 @@
     (unless package
       #+quicklisp (ql:quickload (string-downcase package-name) :silent t)
       #-quicklisp (asdf:load-system (string-downcase package-name))
-      (setf package (find-package package-name)))
+      (setf package (find-package (intern (string-upcase package-name) "KEYWORD"))))
     (make-instance
-     (intern (format nil "~A-~A" style '#:reporter) package)
+     (intern (string-upcase (format nil "~A-~A" style '#:reporter)) package)
      :stream stream)))
 
 (defgeneric print-message (reporter desc)
