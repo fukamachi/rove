@@ -24,7 +24,8 @@
                0)
           (let* ((directories (nthcdr (length (pathname-directory asdf:*user-cache*))
                                       (pathname-directory pathname)))
-                 (device (when (pathname-device pathname)
+                 (device (pathname-device pathname))
+                 (device (when (and device (not (eq device :unspecific)))
                            (pop directories))))
             (make-pathname
              :type "lisp"
