@@ -45,7 +45,6 @@ exec ros -Q -- $0 "$@"
                  (declare #+sbcl (sb-ext:muffle-conditions cl:warning))
                (handler-bind ((cl:warning #'muffle-warning))
                  (asdf:load-system system-name :force (coverage-enabled-p))))
-             (asdf:test-system system-name)
              (unless rove/core/suite:*last-suite-report*
                (rove:run system-name)))
          (asdf:missing-dependency (c)
