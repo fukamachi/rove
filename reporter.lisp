@@ -12,6 +12,7 @@
            #:print-message
            #:diag
            #:with-reporter
+           #:invoke-reporter
            #:use-reporter))
 (in-package #:rove/reporter)
 
@@ -47,11 +48,16 @@
     (print-message *stats* desc)))
 
 (defmacro with-reporter (reporter-style &body body)
-  `(let* ((*stats* (make-reporter ,reporter-style))
-          (bt:*default-special-bindings*
-            (append `((*stats* . ,*stats*))
-                    bt:*default-special-bindings*)))
-     ,@body))
+  `(invoke-reporter (make-reporter ,reporter-style)
+                    (lambda () ,@body)))
+
+(defgeneric invoke-reporter (repoter function))
+(defmethod invoke-reporter (reporter function)
+  (let ((*stats* reporter)
+        (bt:*default-special-bindings*
+          (append `((*stats* . ,*stats*))
+                  bt:*default-special-bindings*)))
+    (funcall function)))
 
 (defun use-reporter (style)
   (setf *stats* (make-reporter style)))
