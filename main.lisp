@@ -91,17 +91,21 @@
          (loop for (,k . ,v) in ,before-env
                do (setf (uiop:getenv ,k) ,v))))))
 
-(defun run-test (test-name &key (style :spec))
-  "Run a single test function."
+(defgeneric run-test (test-name &key style)
+  (:documentation "Run a single test function."))
+
+(defgeneric run (target &key style env)
+  (:documentation "Run a test package."))
+
+(defmethod run-test (test-name &key (style :spec))
   (let ((test (get-test test-name)))
     (unless test
       (error "No test found for ~S" test-name))
     (with-reporter style
       (testing nil
-        (funcall test)))))
+               (funcall test)))))
 
-(defun run (target &key (style *default-reporter*) (env *default-env*))
-  "Run a test package."
+(defmethod run (target &key (style *default-reporter*) (env *default-env*))
   (with-local-envs env
     (with-reporter style
       (run-system-tests target))))
