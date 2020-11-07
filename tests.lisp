@@ -1,0 +1,90 @@
+(defpackage :rove/tests
+  (:use :cl)
+  (:import-from :rove))
+(in-package :rove/tests)
+
+(defclass fake-reporter (rove/reporter:reporter)
+  ((assertions
+    :initform '()
+    :accessor fake-reporter-assertions)))
+
+(defmethod rove/core/stats:record :after ((fake-reporter fake-reporter) object)
+  (push object (fake-reporter-assertions fake-reporter)))
+
+(defun call-with-muffle-standard-output (function)
+  (let (values)
+    (with-output-to-string (*standard-output*)
+      (setf values (multiple-value-list (funcall function))))
+    (apply #'values values)))
+
+(defmacro with-muffle-standard-output (() &body body)
+  `(call-with-muffle-standard-output (lambda () ,@body)))
+
+;; for testing test-ok-success/steps
+(defmacro example-macro (var value)
+  `(let ((,var ,value))
+     ,var))
+
+(defun test-ok-success ()
+  (let* ((reporter (make-instance 'fake-reporter))
+         (rove::*stats* reporter))
+    (assert (eql 3 (with-muffle-standard-output ()
+                     (rove:ok (+ 1 2)))))
+    (assert (eq reporter rove::*stats*))
+    (let ((passed (rove/core/stats:stats-passed reporter)))
+      (assert (= 1 (length passed)))
+      (let ((passed-assertion (elt passed 0)))
+        (assert (typep passed-assertion 'rove/core/result:passed-assertion))
+        (assert (equal '(+ 1 2) (rove/core/result:assertion-form passed-assertion)))
+        (assert (equal '((+ 1 2)) (rove/core/result:assertion-steps passed-assertion)))
+        (assert (equal '(1 2) (rove/core/result:assertion-args passed-assertion)))
+        (assert (equal '(1 2) (rove/core/result:assertion-values passed-assertion)))
+        (assert (equal nil (rove/core/result:assertion-reason passed-assertion)))
+        (assert (<= 0 (rove/core/result:assertion-duration passed-assertion)))
+        (assert (equal nil (rove/core/result:assertion-stacks passed-assertion)))
+        (assert (equal nil (rove/core/result:assertion-labels passed-assertion)))
+        (assert (null (slot-value passed-assertion 'rove/core/result::desc)))))
+    (assert (= 0 (length (rove/core/stats:stats-failed reporter))))
+    (assert (= 0 (length (rove/core/stats:stats-pending reporter))))
+    (progn
+      ;; for testing rove/core/steps:record
+      (assert (= 1 (length (fake-reporter-assertions reporter))))
+      (assert (eq (elt (rove/core/stats:stats-passed reporter) 0)
+                  (elt (fake-reporter-assertions reporter) 0))))
+    rove::*stats*))
+
+(defun test-ok-success/steps ()
+  (let* ((reporter (make-instance 'fake-reporter))
+         (rove::*stats* reporter))
+    (assert (equal 10 (with-muffle-standard-output ()
+                        (rove:ok (example-macro x 10)))))
+    (assert (eq reporter rove::*stats*))
+    (let ((passed (rove/core/stats:stats-passed reporter)))
+      (assert (= 1 (length passed)))
+      (let ((passed-assertion (elt passed 0)))
+        (assert (equal '(example-macro x 10) (rove/core/result:assertion-form passed-assertion)))
+        (assert (equal '((example-macro x 10) (let ((x 10)) x)) (rove/core/result:assertion-steps passed-assertion)))))
+    rove::*stats*))
+
+(defun test-ok-success/desc ()
+  (let* ((reporter (make-instance 'fake-reporter))
+         (rove::*stats* reporter))
+    (with-muffle-standard-output ()
+      (rove:ok (+ 1 2) "Hello"))
+    (assert (eq reporter rove::*stats*))
+    (let ((passed (rove/core/stats:stats-passed reporter)))
+      (assert (= 1 (length passed)))
+      (let ((passed-assertion (elt passed 0)))
+        (assert (equal "Hello" (slot-value passed-assertion 'rove/core/result::desc)))))
+    rove::*stats*))
+
+;; TODO: assertion-labels test
+
+(defun test-ok ()
+  (test-ok-success)
+  (test-ok-success/steps)
+  (test-ok-success/desc))
+
+(defun run ()
+  (test-ok)
+  t)
