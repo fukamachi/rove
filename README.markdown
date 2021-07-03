@@ -44,6 +44,12 @@ $ rove -r spec tests/request.lisp
 (ql:quickload :rove)
 ```
 
+Optionally, install the binary with [Roswell](https://github.com/roswell/roswell/wiki):
+
+```
+$ ros install rove
+```
+
 ## API Reference
 
 ### ok (form &optional description)
