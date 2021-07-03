@@ -103,7 +103,9 @@
                         (setf ,result ,res)
                         (setf ,values ,vals)
                         (setf ,args ,symbs))
-                      (setf ,duration (- (get-internal-real-time) ,start)))
+                      ;; Duration is in milliseconds.
+                      (setf ,duration (truncate (- (get-internal-real-time) ,start)
+                                                (/ internal-time-units-per-second 1000))))
                     (if (eq ,result *fail*)
                         (progn
                           (record *stats* (make-assertion ,reason ,stacks))
