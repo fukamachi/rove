@@ -73,14 +73,27 @@
            (lambda () ,@body))
      (values)))
 
-(defmacro defhook (mode &body body)
-  (let ((main (gensym "MAIN")))
-    `(flet ((,main () ,@body))
-       (pushnew #',main
-                ,(ecase mode
-                   (:before `(suite-before-hooks (package-suite *package*)))
-                   (:after `(suite-after-hooks (package-suite *package*)))))
-       (values))))
+(defmacro defhook (name &optional mode &body body)
+  (let ((main (gensym "MAIN"))
+        (existing-hook (gensym "EXISTING-HOOK"))
+        (no-name-hook (member name '(:before :after) :test 'eq)))
+    (destructuring-bind (name mode &rest body)
+        (if no-name-hook
+            (list* nil name mode body)
+            (list* name mode body))
+      `(flet ((,main ()
+                ,@body))
+         (let ((,existing-hook (assoc ',name
+                                      ,(ecase mode
+                                         (:before `(suite-before-hooks (package-suite *package*)))
+                                         (:after `(suite-after-hooks (package-suite *package*)))))))
+           (if ,existing-hook
+               (setf (cdr ,existing-hook) #',main)
+               (push (cons ',name #',main)
+                     ,(ecase mode
+                        (:before `(suite-before-hooks (package-suite *package*)))
+                        (:after `(suite-after-hooks (package-suite *package*)))))))
+         (values)))))
 
 (defun package-tests (package)
   (reverse (suite-tests (package-suite package))))

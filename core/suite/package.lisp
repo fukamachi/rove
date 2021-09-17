@@ -68,6 +68,12 @@
   (setf (get name 'test) test-fn)
   name)
 
+(defun run-hook (hook)
+  (destructuring-bind (name . fn)
+      hook
+    (declare (ignore name))
+    (funcall fn)))
+
 (defun run-suite (suite)
   (let ((suite (typecase suite
                  (suite suite)
@@ -79,8 +85,8 @@
            (dolist (test (reverse (suite-tests suite)))
              (unwind-protect
                   (progn
-                    (mapc #'funcall (reverse (suite-before-hooks suite)))
+                    (mapc #'run-hook (reverse (suite-before-hooks suite)))
                     (funcall (get-test test)))
-               (mapc #'funcall (reverse (suite-after-hooks suite))))))
+               (mapc #'run-hook (reverse (suite-after-hooks suite))))))
       (when (suite-teardown suite)
         (funcall (suite-teardown suite))))))
