@@ -96,7 +96,7 @@
          (values)))))
 
 (defun package-tests (package)
-  (reverse (suite-tests (package-suite package))))
+  (suite-tests (package-suite package)))
 
 (defun run-package-tests (package)
   (check-type package package)

@@ -9,6 +9,7 @@
            #:system-suites
            #:get-test
            #:set-test
+           #:remove-test
            #:suite-name
            #:suite-setup
            #:suite-teardown
@@ -37,7 +38,13 @@
   teardown
   before-hooks
   after-hooks
-  tests)
+  %tests)
+
+(defun suite-tests (suite)
+  (reverse (remove-if #'null (suite-%tests suite) :key #'get-test)))
+
+(defun (setf suite-tests) (value suite)
+  (setf (suite-%tests suite) value))
 
 (defun make-new-suite (package)
   (let ((pathname (resolve-file (or *load-pathname* *compile-file-pathname*))))
@@ -68,6 +75,10 @@
   (setf (get name 'test) test-fn)
   name)
 
+(defun remove-test (name)
+  (remprop name 'test)
+  (values))
+
 (defun run-hook (hook)
   (destructuring-bind (name . fn)
       hook
@@ -82,7 +93,7 @@
          (progn
            (when (suite-setup suite)
              (funcall (suite-setup suite)))
-           (dolist (test (reverse (suite-tests suite)))
+           (dolist (test (suite-tests suite))
              (unwind-protect
                   (progn
                     (mapc #'run-hook (reverse (suite-before-hooks suite)))

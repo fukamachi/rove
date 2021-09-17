@@ -9,6 +9,7 @@
                 #:test-name)
   (:import-from #:rove/core/suite/package
                 #:get-test
+                #:remove-test
                 #:system-suites
                 #:suite-name
                 #:run-suite)
@@ -19,7 +20,8 @@
            #:*last-suite-report*
            #:*rove-standard-output*
            #:*rove-error-output*
-           #:get-test))
+           #:get-test
+           #:remove-test))
 (in-package #:rove/core/suite)
 
 (defvar *last-suite-report* nil)

@@ -22,7 +22,8 @@
   (:import-from #:rove/core/suite
                 #:run-system-tests
                 #:run-suite
-                #:get-test)
+                #:get-test
+                #:remove-test)
   (:import-from #:rove/core/stats
                 #:*stats*
                 #:plan)
@@ -56,6 +57,7 @@
            #:run-test
            #:run-suite
            #:run
+           #:remove-test
            #:with-local-envs
            #:*default-reporter*
            #:*default-env*
