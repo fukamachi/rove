@@ -83,7 +83,7 @@
       #'ignore-handler
       #'error-handler))
 
-(defun %okng-record (form result args-values steps duration desc class-fn positive)
+(defun %okng-record (form result args-symbols args-values steps duration desc class-fn positive)
   (let ((assertion
           (make-instance (funcall class-fn
                                   (if (eq result *fail*)
@@ -92,8 +92,8 @@
                                   *reason*)
                          :form form
                          :steps (reverse steps)
-                         :args (mapcar #'car args-values)
-                         :values (mapcar #'cdr args-values)
+                         :args args-symbols
+                         :values args-values
                          :reason *reason*
                          :duration duration
                          :stacks *stacks*
@@ -110,11 +110,8 @@
 (defmacro %okng (form desc class-fn positive &environment env)
   (let* ((form-steps (form-steps form))
          (expanded-form (first form-steps))
-         (function-form-p (and (consp expanded-form)
-                               (symbolp (first expanded-form))
-                               (not (special-operator-p (first expanded-form)))
-                               (not (macro-function (first expanded-form) env))))
          (result (gensym "RESULT"))
+         (args-symbols (gensym "ARGS-SYMBOLS"))
          (args-values (gensym "ARGS-VALUES"))
          (steps (gensym "STEPS"))
          (start (gensym "START")))
@@ -122,21 +119,13 @@
            (,steps ',form-steps)
            *stacks* *reason*)
        (handler-bind ((error (detect-error-handler)))
-         (multiple-value-bind (,result ,args-values)
+         (multiple-value-bind (,result ,args-symbols ,args-values)
              (restart-case
-                 ,(if function-form-p
-                      `(let ((,args-values
-                               (list
-                                 ,@(loop for arg in (rest expanded-form)
-                                         collect `(cons ',arg ,arg)))))
-                         (values
-                           (apply #',(first expanded-form)
-                                  (mapcar #'cdr ,args-values))
-                           ,args-values))
-                      `(values ,expanded-form nil))
+                 (form-inspect ,expanded-form)
                (continue () *fail*))
            (%okng-record ',expanded-form
                          ,result
+                         ,args-symbols
                          ,args-values
                          ,steps
                          ;; Duration is in milliseconds.
