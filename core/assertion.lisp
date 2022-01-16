@@ -64,66 +64,86 @@
                    ,args-values))
         `(values ,form nil nil))))
 
-(defmacro %okng (form desc class-fn positive)
-  (let ((args (gensym "ARGS"))
-        (values (gensym "VALUES"))
-        (result (gensym "RESULT"))
-        (reason (gensym "REASON"))
-        (stacks (gensym "STACKS"))
-        (e (gensym "E"))
-        (start (gensym "START"))
-        (duration (gensym "DURATION"))
-        (res (gensym))
-        (symbs (gensym))
-        (vals (gensym)))
-    (let* ((steps (form-steps form))
-           (expanded-form (first steps)))
-      `(let (,args ,values ,result ,duration ,reason ,stacks)
-         (labels ((make-assertion (&optional ,reason ,stacks)
-                    (make-instance (funcall ,class-fn (if (eq ,result *fail*)
-                                                          ,(not positive)
-                                                          (not (null ,result))) ,reason)
-                                   :form ',form
-                                   :steps ',(nreverse steps)
-                                   :args ,args
-                                   :values ,values
-                                   :reason ,reason
-                                   :duration ,duration
-                                   :stacks ,stacks
-                                   :labels (and *stats*
-                                                (stats-context-labels *stats*))
-                                   :desc ,desc
-                                   :negative ,(not positive)))
-                  (main ()
-                    (let ((,start (get-internal-real-time)))
-                      (multiple-value-bind (,res ,symbs ,vals)
-                          (restart-case
-                              (form-inspect ,expanded-form)
-                            (continue () *fail*))
-                        (setf ,result ,res)
-                        (setf ,values ,vals)
-                        (setf ,args ,symbs))
-                      ;; Duration is in milliseconds.
-                      (setf ,duration (truncate (- (get-internal-real-time) ,start)
-                                                (/ internal-time-units-per-second 1000))))
-                    (if (eq ,result *fail*)
-                        (progn
-                          (record *stats* (make-assertion ,reason ,stacks))
-                          nil)
-                        (progn
-                          (record *stats* (make-assertion))
-                          ,result))))
-           (if (or *debug-on-error*
-                   (toplevel-stats-p *stats*))
-               (main)
-               (handler-bind ((error
-                                (lambda (,e)
-                                  (setf ,reason ,e)
-                                  (setf ,stacks (dissect:stack))
-                                  (let ((restart (find-restart 'continue)))
-                                    (when restart
-                                      (invoke-restart restart))))))
-                 (main))))))))
+(defparameter *reason* nil)
+(defparameter *stacks* nil)
+
+(defun error-handler (e)
+  (setf *reason* e)
+  (setf *stacks* (dissect:stack))
+  (let ((restart (find-restart 'continue)))
+    (when restart
+      (invoke-restart restart))))
+
+(defun ignore-handler (e)
+  (declare (ignore e)))
+
+(defun detect-error-handler ()
+  (if (or *debug-on-error*
+          (toplevel-stats-p *stats*))
+      #'ignore-handler
+      #'error-handler))
+
+(defun %okng-record (form result args-values steps duration desc class-fn positive)
+  (let ((assertion
+          (make-instance (funcall class-fn
+                                  (if (eq result *fail*)
+                                      (not positive)
+                                      (not (null result)))
+                                  *reason*)
+                         :form form
+                         :steps (reverse steps)
+                         :args (mapcar #'car args-values)
+                         :values (mapcar #'cdr args-values)
+                         :reason *reason*
+                         :duration duration
+                         :stacks *stacks*
+                         :labels (and *stats*
+                                      (stats-context-labels *stats*))
+                         :negative (not positive))))
+    (record *stats* assertion)
+    result))
+
+(defun calc-duration (start)
+  (truncate (- (get-internal-real-time) start)
+            (/ internal-time-units-per-second 1000)))
+
+(defmacro %okng (form desc class-fn positive &environment env)
+  (let* ((form-steps (form-steps form))
+         (expanded-form (first form-steps))
+         (function-form-p (and (consp expanded-form)
+                               (symbolp (first expanded-form))
+                               (not (special-operator-p (first expanded-form)))
+                               (not (macro-function (first expanded-form) env))))
+         (result (gensym "RESULT"))
+         (args-values (gensym "ARGS-VALUES"))
+         (steps (gensym "STEPS"))
+         (start (gensym "START")))
+    `(let ((,start (get-internal-real-time))
+           (,steps ',form-steps)
+           *stacks* *reason*)
+       (handler-bind ((error (detect-error-handler)))
+         (multiple-value-bind (,result ,args-values)
+             (restart-case
+                 ,(if function-form-p
+                      `(let ((,args-values
+                               (list
+                                 ,@(loop for arg in (rest expanded-form)
+                                         collect `(cons ',arg ,arg)))))
+                         (values
+                           (apply #',(first expanded-form)
+                                  (mapcar #'cdr ,args-values))
+                           ,args-values))
+                      `(values ,expanded-form nil))
+               (continue () *fail*))
+           (%okng-record ',expanded-form
+                         ,result
+                         ,args-values
+                         ,steps
+                         ;; Duration is in milliseconds.
+                         (calc-duration ,start)
+                         ,desc
+                         ,class-fn
+                         ,positive))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))
