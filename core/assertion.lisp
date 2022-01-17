@@ -64,39 +64,20 @@
                    ,args-values))
         `(values ,form nil nil))))
 
-(defparameter *reason* nil)
-(defparameter *stacks* nil)
-
-(defun error-handler (e)
-  (setf *reason* e)
-  (setf *stacks* (dissect:stack))
-  (let ((restart (find-restart 'continue)))
-    (when restart
-      (invoke-restart restart))))
-
-(defun ignore-handler (e)
-  (declare (ignore e)))
-
-(defun detect-error-handler ()
-  (if (or *debug-on-error*
-          (toplevel-stats-p *stats*))
-      #'ignore-handler
-      #'error-handler))
-
-(defun %okng-record (form result args-symbols args-values steps duration desc class-fn positive)
+(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc class-fn positive)
   (let ((assertion
           (make-instance (funcall class-fn
                                   (if (eq result *fail*)
                                       (not positive)
                                       (not (null result)))
-                                  *reason*)
+                                  reason)
                          :form form
                          :steps (reverse steps)
                          :args args-symbols
                          :values args-values
-                         :reason *reason*
+                         :reason reason
                          :duration duration
-                         :stacks *stacks*
+                         :stacks stacks
                          :labels (and *stats*
                                       (stats-context-labels *stats*))
                          :negative (not positive))))
@@ -114,25 +95,33 @@
          (args-symbols (gensym "ARGS-SYMBOLS"))
          (args-values (gensym "ARGS-VALUES"))
          (steps (gensym "STEPS"))
+         (stacks (gensym "STACKS"))
+         (e (gensym "E"))
          (start (gensym "START")))
     `(let ((,start (get-internal-real-time))
-           (,steps ',form-steps)
-           *stacks* *reason*)
-       (handler-bind ((error (detect-error-handler)))
-         (multiple-value-bind (,result ,args-symbols ,args-values)
-             (restart-case
-                 (form-inspect ,expanded-form)
-               (continue () *fail*))
-           (%okng-record ',expanded-form
-                         ,result
-                         ,args-symbols
-                         ,args-values
-                         ,steps
-                         ;; Duration is in milliseconds.
-                         (calc-duration ,start)
-                         ,desc
-                         ,class-fn
-                         ,positive))))))
+           (,steps ',form-steps))
+       (flet ((record (,result ,args-symbols ,args-values &optional ,e ,stacks)
+                (%okng-record ',expanded-form
+                              ,result
+                              ,args-symbols
+                              ,args-values
+                              ,steps
+                              ,stacks
+                              ,e
+                              ;; Duration is in milliseconds.
+                              (calc-duration ,start)
+                              ,desc
+                              ,class-fn
+                              ,positive)))
+         (catch 'continue
+                (handler-bind
+                    ((error (lambda (,e)
+                              (record *fail* nil nil ,e (dissect:stack))
+                              (unless (or *debug-on-error*
+                                          (toplevel-stats-p *stats*))
+                                (throw 'continue *fail*)))))
+                  (multiple-value-call #'record
+                    (form-inspect ,expanded-form))))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))
