@@ -98,30 +98,35 @@
          (stacks (gensym "STACKS"))
          (e (gensym "E"))
          (start (gensym "START")))
-    `(let ((,start (get-internal-real-time))
-           (,steps ',form-steps))
-       (flet ((record (,result ,args-symbols ,args-values &optional ,e ,stacks)
-                (%okng-record ',expanded-form
-                              ,result
-                              ,args-symbols
-                              ,args-values
-                              ,steps
-                              ,stacks
-                              ,e
-                              ;; Duration is in milliseconds.
-                              (calc-duration ,start)
-                              ,desc
-                              ,class-fn
-                              ,positive)))
-         (catch 'continue
-                (handler-bind
-                    ((error (lambda (,e)
-                              (record *fail* nil nil ,e (dissect:stack))
-                              (unless (or *debug-on-error*
-                                          (toplevel-stats-p *stats*))
-                                (throw 'continue *fail*)))))
-                  (multiple-value-call #'record
-                    (form-inspect ,expanded-form))))))))
+    `(let* ((,start (get-internal-real-time))
+            (,steps ',form-steps)
+            (record (lambda (,result ,args-symbols ,args-values &optional ,stacks ,e)
+                      (%okng-record ',expanded-form
+                                    ,result
+                                    ,args-symbols
+                                    ,args-values
+                                    ,steps
+                                    ,stacks
+                                    ,e
+                                    ;; Duration is in milliseconds.
+                                    (calc-duration ,start)
+                                    ,desc
+                                    ,class-fn
+                                    ,positive))))
+       (catch 'continue
+              (handler-bind
+                  ((error (lambda (,e)
+                            (funcall record
+                                     *fail*
+                                     nil
+                                     nil
+                                     (dissect:stack)
+                                     ,e)
+                            (unless (or *debug-on-error*
+                                        (toplevel-stats-p *stats*))
+                              (throw 'continue *fail*)))))
+                (multiple-value-call record
+                  (form-inspect ,expanded-form)))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))
