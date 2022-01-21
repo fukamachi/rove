@@ -106,28 +106,28 @@
          (args-symbols (gensym "ARGS-SYMBOLS"))
          (args-values (gensym "ARGS-VALUES"))
          (steps (gensym "STEPS"))
-         (stacks (gensym "STACKS"))
          (e (gensym "E"))
          (start (gensym "START"))
          (block-label (gensym "BLOCK")))
     `(let* ((,start (get-internal-real-time))
             (,form ',expanded-form)
-            (,steps ',(nreverse form-steps)))
+            (,steps ',(reverse form-steps)))
        (block ,block-label
          (handler-bind
              ((error (lambda (,e)
                        (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,positive)
                        (unless (debug-on-error-p)
                          (return-from ,block-label *fail*)))))
-           (multiple-value-call #'%okng-record
-             ,form
-             (form-inspect ,form)
-             ,steps
-             nil
-             nil
-             (calc-duration ,start)
-             ,desc
-             ,positive))))))
+           (multiple-value-bind (,result ,args-symbols ,args-values)
+               (form-inspect ,form)
+             (%okng-record ,form
+                           ,result ,args-symbols, args-values
+                           ,steps
+                           nil
+                           nil
+                           (calc-duration ,start)
+                           ,desc
+                           ,positive)))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))
