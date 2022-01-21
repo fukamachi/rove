@@ -64,32 +64,43 @@
                    ,args-values))
         `(values ,form nil nil))))
 
-(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc class-fn positive)
-  (let ((assertion
-          (make-instance (funcall class-fn
-                                  (if (eq result *fail*)
-                                      (not positive)
-                                      (not (null result)))
-                                  reason)
-                         :form form
-                         :steps (reverse steps)
-                         :args args-symbols
-                         :values args-values
-                         :reason reason
-                         :duration duration
-                         :stacks stacks
-                         :labels (and *stats*
-                                      (stats-context-labels *stats*))
-                         :negative (not positive))))
+(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc positive)
+  (let* ((class-fn (if positive
+                       #'ok-assertion-class
+                       #'ng-assertion-class))
+         (assertion
+           (make-instance (funcall class-fn
+                                   (if (eq result *fail*)
+                                       (not positive)
+                                       (not (null result)))
+                                   reason)
+                          :form form
+                          :steps (reverse steps)
+                          :args args-symbols
+                          :values args-values
+                          :reason reason
+                          :duration duration
+                          :stacks stacks
+                          :labels (and *stats*
+                                       (stats-context-labels *stats*))
+                          :negative (not positive))))
     (record *stats* assertion)
     result))
+
+(defun record-error (form steps reason duration description positive)
+  (%okng-record form *fail* nil nil steps (dissect:stack) reason duration description positive))
 
 (defun calc-duration (start)
   (truncate (- (get-internal-real-time) start)
             (/ internal-time-units-per-second 1000)))
 
-(defmacro %okng (form desc class-fn positive &environment env)
+(defun debug-on-error-p ()
+  (or *debug-on-error*
+      (toplevel-stats-p *stats*)))
+
+(defmacro %okng (form desc positive &environment env)
   (let* ((form-steps (form-steps form))
+         (form (gensym "FORM"))
          (expanded-form (first form-steps))
          (result (gensym "RESULT"))
          (args-symbols (gensym "ARGS-SYMBOLS"))
@@ -97,36 +108,26 @@
          (steps (gensym "STEPS"))
          (stacks (gensym "STACKS"))
          (e (gensym "E"))
-         (start (gensym "START")))
+         (start (gensym "START"))
+         (block-label (gensym "BLOCK")))
     `(let* ((,start (get-internal-real-time))
-            (,steps ',form-steps)
-            (record (lambda (,result ,args-symbols ,args-values &optional ,stacks ,e)
-                      (%okng-record ',expanded-form
-                                    ,result
-                                    ,args-symbols
-                                    ,args-values
-                                    ,steps
-                                    ,stacks
-                                    ,e
-                                    ;; Duration is in milliseconds.
-                                    (calc-duration ,start)
-                                    ,desc
-                                    ,class-fn
-                                    ,positive))))
-       (catch 'continue
-              (handler-bind
-                  ((error (lambda (,e)
-                            (funcall record
-                                     *fail*
-                                     nil
-                                     nil
-                                     (dissect:stack)
-                                     ,e)
-                            (unless (or *debug-on-error*
-                                        (toplevel-stats-p *stats*))
-                              (throw 'continue *fail*)))))
-                (multiple-value-call record
-                  (form-inspect ,expanded-form)))))))
+            (,form ',expanded-form)
+            (,steps ',(nreverse form-steps)))
+       (block ,block-label
+         (handler-bind
+             ((error (lambda (,e)
+                       (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,positive)
+                       (unless (debug-on-error-p)
+                         (return-from ,block-label *fail*)))))
+           (multiple-value-call #'%okng-record
+             ,form
+             (form-inspect ,form)
+             ,steps
+             nil
+             nil
+             (calc-duration ,start)
+             ,desc
+             ,positive))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))
@@ -135,9 +136,7 @@
     'failed-assertion))
 
 (defmacro ok (form &optional desc)
-  `(%okng ,form ,desc
-          #'ok-assertion-class
-          t))
+  `(%okng ,form ,desc t))
 
 (defun ng-assertion-class (result error)
   (cond
@@ -146,9 +145,7 @@
     (t 'passed-assertion)))
 
 (defmacro ng (form &optional desc)
-  `(%okng ,form ,desc
-          #'ng-assertion-class
-          nil))
+  `(%okng ,form ,desc nil))
 
 (defmacro signals (form &optional (condition ''error))
   "Returns t if given form raise condition of given type,
