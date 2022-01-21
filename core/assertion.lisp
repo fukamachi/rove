@@ -119,9 +119,9 @@
                        (unless (debug-on-error-p)
                          (return-from ,block-label *fail*)))))
            (multiple-value-bind (,result ,args-symbols ,args-values)
-               (form-inspect ,form)
+               (form-inspect ,expanded-form)
              (%okng-record ,form
-                           ,result ,args-symbols, args-values
+                           ,result ,args-symbols ,args-values
                            ,steps
                            nil
                            nil
