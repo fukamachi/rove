@@ -70,7 +70,7 @@
 
 (defun set-test (name test-fn)
   (check-type name symbol)
-  (pushnew name (suite-tests (package-suite *package*))
+  (pushnew name (suite-%tests (package-suite *package*))
            :test 'eq)
   (setf (get name 'test) test-fn)
   name)
