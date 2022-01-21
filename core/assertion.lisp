@@ -75,7 +75,7 @@
                                        (not (null result)))
                                    reason)
                           :form form
-                          :steps (reverse steps)
+                          :steps steps
                           :args args-symbols
                           :values args-values
                           :reason reason
