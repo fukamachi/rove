@@ -76,6 +76,7 @@
                          :args args-symbols
                          :values args-values
                          :reason reason
+                         :desc desc
                          :duration duration
                          :stacks stacks
                          :labels (and *stats*
