@@ -6,6 +6,8 @@
                 #:*debug-on-error*
                 #:ok
                 #:ng
+                #:assert-ok
+                #:assert-ng
                 #:signals
                 #:outputs
                 #:expands
@@ -43,6 +45,8 @@
   (:export #:*debug-on-error*
            #:ok
            #:ng
+           #:assert-ok
+           #:assert-ng
            #:signals
            #:outputs
            #:expands
