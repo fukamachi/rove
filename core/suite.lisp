@@ -1,5 +1,6 @@
 (in-package #:cl-user)
-(defpackage #:rove/core/suite
+(defpackage #:rove/suite
+  (:nicknames #:rove/core/suite)
   (:use #:cl
         #:rove/core/assertion
         #:rove/core/result
