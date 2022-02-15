@@ -23,9 +23,9 @@
 
            #:test
            #:test-name
-           #:test-passed-assertions
-           #:test-failed-assertions
-           #:test-pending-assertions
+           #:passed-tests
+           #:failed-tests
+           #:pending-tests
            #:test-passed-p
 
            #:passed-assertion
@@ -123,17 +123,17 @@
          :reader test-name)
    (passed :initarg :passed
            :initform nil
-           :accessor test-passed-assertions)
+           :accessor passed-tests)
    (failed :initarg :failed
            :initform nil
-           :accessor test-failed-assertions)
+           :accessor failed-tests)
    (pending :initarg :pending
             :initform nil
-            :accessor test-pending-assertions)))
+            :accessor pending-tests)))
 
 (defgeneric test-passed-p (test)
   (:method ((test test))
-    (= 0 (length (test-failed-assertions test)))))
+    (= 0 (length (failed-tests test)))))
 
 (defclass passed-assertion (assertion passed) ())
 (defclass failed-assertion (assertion failed) ())

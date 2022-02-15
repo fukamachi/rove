@@ -26,20 +26,20 @@
                                  (length (stats-failed context))
                                  test-count))
              stream)
-            (let ((failed-assertions
+            (let ((failed-tests
                     (labels ((assertions (object)
                                (typecase object
                                  (failed-assertion (list object))
                                  (failed-test
                                   (apply #'append
                                          (mapcar #'assertions
-                                                 (test-failed-assertions object)))))))
+                                                 (failed-tests object)))))))
                       (loop for object across (stats-failed context)
                             append (assertions object)))))
               (let ((*print-circle* t)
                     (*print-assertion* t))
                 (loop for i from 0
-                      for f in failed-assertions
+                      for f in failed-tests
                       do (fresh-line stream)
                          (write-char #\Newline stream)
                          (princ

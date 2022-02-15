@@ -101,8 +101,8 @@
     (let ((test (if (/= (length (stats-failed *stats*)) 0)
                     (aref (stats-failed *stats*) 0)
                     (aref (stats-passed *stats*) 0))))
-      (let ((passed (test-passed-assertions test))
-            (failed (test-failed-assertions test)))
+      (let ((passed (passed-tests test))
+            (failed (failed-tests test)))
 
         (format stream "~2&Summary:~%")
         (if failed
