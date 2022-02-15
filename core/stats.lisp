@@ -15,8 +15,12 @@
            #:plan
            #:test-begin
            #:test-finish
+           #:stats-passed-p
+           #:with-context
            #:suite-begin
            #:suite-finish
+           #:system-tests-begin
+           #:system-tests-finish
            #:toplevel-stats-p
            #:all-failed-assertions))
 (in-package #:rove/core/stats)
@@ -93,31 +97,43 @@
 
 (defgeneric test-begin (stats test-name &optional count)
   (:method (stats test-name &optional count)
-    (new-context stats test-name)
-    (setf (stats-plan (stats-context stats)) count)
-    (values)))
+    (declare (ignore stats test-name count))))
 
 (defgeneric test-finish (stats test-name)
   (:method (stats test-name)
-    (let* ((context (stats-context stats))
-           (passedp (and (= 0 (length (stats-failed context)))
-                         (or (null (stats-plan context))
-                             (= (stats-plan context)
-                                (+ (length (stats-failed context))
-                                   (length (stats-passed context))
-                                   (length (stats-pending context)))))))
-           (test
-             (make-instance (if passedp
-                                'passed-test
-                                'failed-test)
-                            :name test-name
-                            :passed (coerce (stats-passed (stats-context stats)) 'list)
-                            :failed (coerce (stats-failed (stats-context stats)) 'list)
-                            :pending (coerce (stats-pending (stats-context stats)) 'list))))
-      (let ((context (leave-context stats)))
-        (record stats test)
+    (declare (ignore stats test-name))))
 
-        (values passedp context)))))
+(defun stats-passed-p (stats)
+  (and (= 0 (length (stats-failed stats)))
+       (or (null (stats-plan stats))
+           (= (stats-plan stats)
+              (+ (length (stats-failed stats))
+                 (length (stats-passed stats))
+                 (length (stats-pending stats)))))))
+
+(defmacro with-context ((context &key name) &body body)
+  (let ((passedp (gensym "PASSEDP"))
+        (test (gensym "TEST")))
+    `(let ((,context (new-context *stats* ,name)))
+       (declare (ignorable ,context))
+       (unwind-protect (progn ,@body)
+         (let* ((,context (stats-context *stats*))
+                (,passedp (and (= 0 (length (stats-failed ,context)))
+                               (or (null (stats-plan ,context))
+                                   (= (stats-plan ,context)
+                                      (+ (length (stats-failed ,context))
+                                         (length (stats-passed ,context))
+                                         (length (stats-pending ,context)))))))
+                (,test
+                  (make-instance (if ,passedp
+                                     'passed-test
+                                     'failed-test)
+                                 :name ,name
+                                 :passed (coerce (stats-passed (stats-context *stats*)) 'list)
+                                 :failed (coerce (stats-failed (stats-context *stats*)) 'list)
+                                 :pending (coerce (stats-pending (stats-context *stats*)) 'list))))
+           (leave-context *stats*)
+           (record *stats* ,test))))))
 
 (defgeneric suite-begin (stats suite-name)
   (:method (stats suite-name)
@@ -125,6 +141,12 @@
 
 (defgeneric suite-finish (stats suite-name)
   (:method (stats suite-name)))
+
+(defgeneric system-tests-begin (stats system)
+  (:method (stats system)))
+
+(defgeneric system-tests-finish (stats system)
+  (:method (stats system)))
 
 (defun toplevel-stats-p (stats)
   (null (slot-value stats 'contexts)))

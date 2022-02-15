@@ -30,7 +30,7 @@
 
 (defmethod test-finish ((reporter dot-reporter) test-name)
   (declare (ignore test-name))
-  (multiple-value-bind (passedp context) (call-next-method)
+  (let ((context (stats-context reporter)))
     (when (toplevel-stats-p reporter)
       (format-failure-tests (reporter-stream reporter) context))
-    passedp))
+    (stats-passed-p context)))

@@ -40,7 +40,8 @@
       #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
       #-quicklisp (asdf:load-system (asdf:component-name system))
 
-      (testing (format nil "Testing System ~A" (asdf:component-name system))
+      (system-tests-begin *stats* system)
+      (with-context (context)
         (typecase system
           (asdf:package-inferred-system
             (let* ((package-name (string-upcase (asdf:component-name system)))
@@ -61,20 +62,13 @@
           (otherwise
             (dolist (suite (system-suites system))
               (run-suite suite)))))
+      (system-tests-finish *stats* system)
 
-      (let ((test (if (/= (length (stats-failed *stats*)) 0)
-                      (aref (stats-failed *stats*) 0)
-                      (aref (stats-passed *stats*) 0))))
+      (let ((test (if (stats-passed-p *stats*)
+                      (aref (stats-passed *stats*) 0)
+                      (aref (stats-failed *stats*) 0))))
         (let ((passed (test-passed-assertions test))
               (failed (test-failed-assertions test)))
-
-          (format t "~2&Summary:~%")
-          (if failed
-              (format t "  ~D test~:*~P failed.~{~%    - ~A~}~%"
-                      (length failed)
-                      (mapcar #'test-name failed))
-              (format t "  All ~D test~:*~P passed.~%"
-                      (length passed)))
 
           (setf *last-suite-report*
                 (list (= 0 (length failed))
