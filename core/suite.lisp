@@ -63,6 +63,7 @@
             (dolist (suite (system-suites system))
               (run-suite suite)))))
       (system-tests-finish *stats* system)
+      (summarize *stats*)
 
       (let ((test (if (stats-passed-p *stats*)
                       (aref (stats-passed *stats*) 0)

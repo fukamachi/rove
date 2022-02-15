@@ -8,7 +8,9 @@
   (:import-from #:rove/core/stats
                 #:*stats*
                 #:suite-begin
-                #:suite-finish)
+                #:suite-finish
+                #:summarize
+                #:toplevel-stats-p)
   (:export #:all-suites
            #:system-suites
            #:get-test
@@ -107,4 +109,6 @@
               (mapc #'run-hook (reverse (suite-after-hooks suite))))))
       (when (suite-teardown suite)
         (funcall (suite-teardown suite)))
-      (suite-finish *stats* suite-name))))
+      (suite-finish *stats* suite-name)
+      (when (toplevel-stats-p *stats*)
+        (summarize *stats*)))))

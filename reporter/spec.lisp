@@ -77,10 +77,7 @@
   (let* ((context (stats-context reporter))
          (stream (reporter-stream reporter))
          (test-count (context-test-count context)))
-    (when test-name
-      (decf (stream-indent-level stream) 2))
-    (when (toplevel-stats-p reporter)
-      (format-failure-tests stream context))
+    (decf (stream-indent-level stream) 2)
     (when (and (stats-plan context)
                (/= (stats-plan context) test-count))
       (princ
@@ -98,10 +95,9 @@
 (defmethod system-tests-begin ((reporter spec-reporter) system)
   (format (reporter-stream reporter) "~2&Testing System ~A~%" (asdf:component-name system)))
 
-(defmethod system-tests-finish ((reporter spec-reporter) system)
+(defmethod summarize ((reporter spec-reporter))
   (let ((stream (reporter-stream reporter)))
-    (when (toplevel-stats-p reporter)
-      (format-failure-tests stream (stats-context reporter)))
+    (format-failure-tests stream (stats-context reporter))
     (let ((test (if (/= (length (stats-failed *stats*)) 0)
                     (aref (stats-failed *stats*) 0)
                     (aref (stats-passed *stats*) 0))))

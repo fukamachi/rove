@@ -21,6 +21,7 @@
            #:suite-finish
            #:system-tests-begin
            #:system-tests-finish
+           #:summarize
            #:toplevel-stats-p
            #:all-failed-assertions))
 (in-package #:rove/core/stats)
@@ -137,16 +138,23 @@
 
 (defgeneric suite-begin (stats suite-name)
   (:method (stats suite-name)
-    (values)))
+    (declare (ignore stats suite-name))))
 
 (defgeneric suite-finish (stats suite-name)
-  (:method (stats suite-name)))
+  (:method (stats suite-name)
+    (declare (ignore stats suite-name))))
 
 (defgeneric system-tests-begin (stats system)
-  (:method (stats system)))
+  (:method (stats system)
+    (declare (ignore stats system))))
 
 (defgeneric system-tests-finish (stats system)
-  (:method (stats system)))
+  (:method (stats system)
+    (declare (ignore stats system))))
+
+(defgeneric summarize (stats)
+  (:method (stats)
+    (declare (ignore stats))))
 
 (defun toplevel-stats-p (stats)
   (null (slot-value stats 'contexts)))
