@@ -5,14 +5,13 @@
         #:rove/core/result
         #:rove/core/test
         #:rove/core/stats)
-  (:import-from #:rove/core/result
-                #:test-name)
   (:import-from #:rove/core/suite/package
                 #:get-test
                 #:remove-test
                 #:system-suites
                 #:suite-name
-                #:run-suite)
+                #:run-suite
+                #:package-suite)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
   (:export #:run-system-tests
@@ -51,17 +50,16 @@
               ;; Loading dependencies beforehand
               (let ((pkgs (system-packages system)))
                 (dolist (package pkgs)
-                  (when (package-tests package)
-                    (format t "~2&;; testing '~(~A~)'~%" (package-name package))
-                    (run-package-tests package))))
+                  (let ((suite (package-suite package)))
+                    (when suite
+                      (run-suite suite)))))
 
-              (when (and package
-                         (package-tests package))
-                (format t "~2&;; testing '~(~A~)'~%" (package-name package))
-                (run-package-tests package))))
+              (when package
+                (let ((suite (package-suite package)))
+                  (when suite
+                    (run-suite suite))))))
           (otherwise
             (dolist (suite (system-suites system))
-              (format t "~2&;; testing '~(~A~)'~%" (suite-name suite))
               (run-suite suite)))))
 
       (let ((test (if (/= (length (stats-failed *stats*)) 0)

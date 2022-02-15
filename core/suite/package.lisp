@@ -5,6 +5,10 @@
                 #:resolve-file
                 #:file-package
                 #:system-packages)
+  (:import-from #:rove/core/stats
+                #:*stats*
+                #:suite-begin
+                #:suite-finish)
   (:export #:all-suites
            #:system-suites
            #:get-test
@@ -86,18 +90,21 @@
     (funcall fn)))
 
 (defun run-suite (suite)
-  (let ((suite (typecase suite
-                 (suite suite)
-                 (otherwise (package-suite suite)))))
+  (let* ((suite (typecase suite
+                  (suite suite)
+                  (otherwise (package-suite suite))))
+         (suite-name (suite-name suite)))
+    (suite-begin *stats* suite-name)
     (unwind-protect
-         (progn
-           (when (suite-setup suite)
-             (funcall (suite-setup suite)))
-           (dolist (test (suite-tests suite))
-             (unwind-protect
-                  (progn
-                    (mapc #'run-hook (reverse (suite-before-hooks suite)))
-                    (funcall (get-test test)))
-               (mapc #'run-hook (reverse (suite-after-hooks suite))))))
+        (progn
+          (when (suite-setup suite)
+            (funcall (suite-setup suite)))
+          (dolist (test (suite-tests suite))
+            (unwind-protect
+                (progn
+                  (mapc #'run-hook (reverse (suite-before-hooks suite)))
+                  (funcall (get-test test)))
+              (mapc #'run-hook (reverse (suite-after-hooks suite))))))
       (when (suite-teardown suite)
-        (funcall (suite-teardown suite))))))
+        (funcall (suite-teardown suite)))
+      (suite-finish *stats* suite-name))))

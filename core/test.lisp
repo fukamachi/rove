@@ -15,7 +15,6 @@
            #:defhook
            #:package-tests
            #:run-test
-           #:run-package-tests
            #:*default-test-compilation-time*))
 (in-package #:rove/core/test)
 
@@ -97,12 +96,3 @@
 
 (defun package-tests (package)
   (suite-tests (package-suite package)))
-
-(defun run-package-tests (package)
-  (check-type package package)
-  (let ((test-name (string-downcase (package-name package)))
-        (suite (package-suite package))
-        (*package* package))
-    (test-begin *stats* test-name (length (suite-tests suite)))
-    (unwind-protect (run-suite suite)
-      (test-finish *stats* test-name))))

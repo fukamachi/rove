@@ -92,3 +92,6 @@
          stream)
         (fresh-line stream))
       passedp)))
+
+(defmethod suite-begin ((reporter spec-reporter) suite-name)
+  (format t "~2&;; testing '~(~A~)'~%" suite-name))

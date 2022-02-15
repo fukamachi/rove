@@ -15,6 +15,8 @@
            #:plan
            #:test-begin
            #:test-finish
+           #:suite-begin
+           #:suite-finish
            #:toplevel-stats-p
            #:all-failed-assertions))
 (in-package #:rove/core/stats)
@@ -116,6 +118,13 @@
         (record stats test)
 
         (values passedp context)))))
+
+(defgeneric suite-begin (stats suite-name)
+  (:method (stats suite-name)
+    (values)))
+
+(defgeneric suite-finish (stats suite-name)
+  (:method (stats suite-name)))
 
 (defun toplevel-stats-p (stats)
   (null (slot-value stats 'contexts)))
