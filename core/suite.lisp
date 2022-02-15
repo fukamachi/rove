@@ -11,11 +11,15 @@
                 #:system-suites
                 #:suite-name
                 #:run-suite
-                #:package-suite)
+                #:package-suite
+                #:all-suites
+                #:find-suite)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
   (:export #:run-system-tests
            #:run-suite
+           #:all-suites
+           #:find-suite
            #:*last-suite-report*
            #:*rove-standard-output*
            #:*rove-error-output*

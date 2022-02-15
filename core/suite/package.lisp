@@ -12,6 +12,7 @@
                 #:summarize
                 #:toplevel-stats-p)
   (:export #:all-suites
+           #:find-suite
            #:system-suites
            #:get-test
            #:set-test
@@ -59,16 +60,20 @@
       (setf (file-package pathname) package)))
   (make-suite :name (package-name package)))
 
-(defgeneric package-suite (package-designator)
+(defgeneric find-suite (package)
   (:method ((package package))
-    (or (gethash package *package-suites*)
-        (setf (gethash package *package-suites*)
-              (make-new-suite package))))
+    (values (gethash package *package-suites*)))
   (:method (package-name)
     (let ((package (find-package package-name)))
       (unless package
         (error "No package '~A' found" package-name))
-      (package-suite package))))
+      (find-suite package))))
+
+(defun package-suite (package)
+  (or (find-suite package)
+      (let ((package (find-package package)))
+        (setf (gethash package *package-suites*)
+              (make-new-suite package)))))
 
 (defun get-test (name)
   (check-type name symbol)
