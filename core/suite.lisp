@@ -70,9 +70,9 @@
       (system-tests-finish *stats* system)
       (summarize *stats*)
 
-      (let ((test (if (stats-passed-p *stats*)
-                      (aref (stats-passed *stats*) 0)
-                      (aref (stats-failed *stats*) 0))))
+      (let ((test (if (passedp *stats*)
+                      (first (passed-tests *stats*))
+                      (first (failed-tests *stats*)))))
         (let ((passed (passed-tests test))
               (failed (failed-tests test)))
 

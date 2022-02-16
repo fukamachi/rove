@@ -13,17 +13,17 @@
   (write-char #\Newline stream)
   (let ((stream (make-indent-stream stream)))
     (let ((test-count (context-test-count context)))
-      (if (= 0 (length (stats-failed context)))
+      (if (= 0 (length (failed-tests context)))
           (princ
            (color-text :green
                        (format nil "✓ ~D test~:*~P completed"
-                               (length (stats-passed context))))
+                               (length (passed-tests context))))
            stream)
           (progn
             (princ
              (color-text :red
                          (format nil "× ~D of ~D test~:*~P failed"
-                                 (length (stats-failed context))
+                                 (length (failed-tests context))
                                  test-count))
              stream)
             (let ((failed-tests
@@ -34,7 +34,7 @@
                                   (apply #'append
                                          (mapcar #'assertions
                                                  (failed-tests object)))))))
-                      (loop for object across (stats-failed context)
+                      (loop for object in (failed-tests context)
                             append (assertions object)))))
               (let ((*print-circle* t)
                     (*print-assertion* t))
@@ -88,10 +88,10 @@
                                         do (princ (color-text :gray (dissect:present-object stack nil)) stream)
                                            (fresh-line stream))))))))))))))
   (fresh-line stream)
-  (unless (= 0 (length (stats-pending context)))
+  (unless (= 0 (length (pending-tests context)))
     (princ
      (color-text :aqua
                  (format nil "● ~D test~:*~P skipped"
-                         (length (stats-pending context))))
+                         (length (pending-tests context))))
      stream)
     (fresh-line stream)))

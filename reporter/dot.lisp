@@ -33,4 +33,4 @@
   (let ((context (stats-context reporter)))
     (when (toplevel-stats-p reporter)
       (format-failure-tests (reporter-stream reporter) context))
-    (stats-passed-p context)))
+    (passedp context)))

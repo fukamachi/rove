@@ -87,7 +87,7 @@
                             test-count))
         stream)
       (fresh-line stream))
-    (stats-passed-p context)))
+    (passedp context)))
 
 (defmethod suite-begin ((reporter spec-reporter) suite-name)
   (format (reporter-stream reporter) "~2&;; testing '~(~A~)'~%" suite-name))
@@ -98,9 +98,9 @@
 (defmethod summarize ((reporter spec-reporter))
   (let ((stream (reporter-stream reporter)))
     (format-failure-tests stream (stats-context reporter))
-    (let ((test (if (/= (length (stats-failed *stats*)) 0)
-                    (aref (stats-failed *stats*) 0)
-                    (aref (stats-passed *stats*) 0))))
+    (let ((test (if (/= (length (failed-tests *stats*)) 0)
+                    (first (failed-tests *stats*))
+                    (first (passed-tests *stats*)))))
       (let ((passed (passed-tests test))
             (failed (failed-tests test)))
 
