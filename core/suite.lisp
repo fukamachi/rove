@@ -46,7 +46,7 @@
       #-quicklisp (asdf:load-system (asdf:component-name system))
 
       (system-tests-begin *stats* system)
-      (with-context (context)
+      (with-context (context :name (asdf:component-name system))
         (typecase system
           (asdf:package-inferred-system
             (let* ((package-name (string-upcase (asdf:component-name system)))
