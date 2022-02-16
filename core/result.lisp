@@ -131,6 +131,13 @@
             :initform nil
             :accessor test-pending-tests)))
 
+(defmethod print-object ((test test) stream)
+  (print-unreadable-object (test stream :type t)
+    (format stream "~A (PASSED=~D, FAILED=~D)"
+            (test-name test)
+            (length (test-passed-tests test))
+            (length (test-failed-tests test)))))
+
 (defgeneric passedp (object)
   (:method ((object test))
     (= 0 (length (test-failed-tests object)))))
