@@ -70,14 +70,5 @@
       (system-tests-finish *stats* system)
       (summarize *stats*)
 
-      (let ((test (if (passedp *stats*)
-                      (first (passed-tests *stats*))
-                      (first (failed-tests *stats*)))))
-        (let ((passed (passed-tests test))
-              (failed (failed-tests test)))
-
-          (setf *last-suite-report*
-                (list (= 0 (length failed))
-                      passed
-                      failed))
-          (apply #'values *last-suite-report*))))))
+      (setf *last-suite-report* *stats*)
+      (values (passedp *stats*) *stats*))))
