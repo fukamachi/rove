@@ -1,6 +1,5 @@
 (in-package #:cl-user)
-(defpackage #:rove/result
-  (:nicknames #:rove/core/result)
+(defpackage #:rove/core/result
   (:use #:cl)
   (:export #:passed
            #:failed
