@@ -98,16 +98,13 @@
 (defmethod summarize ((reporter spec-reporter))
   (let ((stream (reporter-stream reporter)))
     (format-failure-tests stream (stats-context reporter))
-    (let ((test (if (/= (length (failed-tests *stats*)) 0)
-                    (first (failed-tests *stats*))
-                    (first (passed-tests *stats*)))))
-      (let ((passed (passed-tests test))
-            (failed (failed-tests test)))
+    (let ((passed (passed-tests reporter))
+          (failed (failed-tests reporter)))
 
-        (format stream "~2&Summary:~%")
-        (if failed
-            (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
-                    (length failed)
-                    (mapcar #'test-name failed))
-            (format stream "  All ~D test~:*~P passed.~%"
-                    (length passed)))))))
+      (format stream "~2&Summary:~%")
+      (if failed
+          (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
+                  (length failed)
+                  (mapcar #'test-name failed))
+          (format stream "  All ~D test~:*~P passed.~%"
+                  (length passed))))))
