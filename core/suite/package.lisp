@@ -47,6 +47,7 @@
   teardown
   before-hooks
   after-hooks
+  package
   %tests)
 
 (defun suite-tests (suite)
@@ -60,7 +61,8 @@
     (when (and pathname
                (not (file-package pathname nil)))
       (setf (file-package pathname) package)))
-  (make-suite :name (string-downcase (package-name package))))
+  (make-suite :name (string-downcase (package-name package))
+              :package package))
 
 (defgeneric find-suite (package)
   (:method ((package package))
@@ -102,7 +104,8 @@
   (let* ((suite (typecase suite
                   (suite suite)
                   (otherwise (package-suite suite))))
-         (suite-name (suite-name suite)))
+         (suite-name (suite-name suite))
+         (*package* (suite-package suite)))
     (when (toplevel-stats-p *stats*)
       (initialize *stats*))
     (suite-begin *stats* suite-name)
