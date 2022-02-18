@@ -7,6 +7,7 @@
                 #:system-packages)
   (:import-from #:rove/core/stats
                 #:*stats*
+                #:with-context
                 #:suite-begin
                 #:suite-finish
                 #:initialize
@@ -59,7 +60,7 @@
     (when (and pathname
                (not (file-package pathname nil)))
       (setf (file-package pathname) package)))
-  (make-suite :name (package-name package)))
+  (make-suite :name (string-downcase (package-name package))))
 
 (defgeneric find-suite (package)
   (:method ((package package))
@@ -105,18 +106,19 @@
     (when (toplevel-stats-p *stats*)
       (initialize *stats*))
     (suite-begin *stats* suite-name)
-    (unwind-protect
-        (progn
-          (when (suite-setup suite)
-            (funcall (suite-setup suite)))
-          (dolist (test (suite-tests suite))
-            (unwind-protect
-                (progn
-                  (mapc #'run-hook (reverse (suite-before-hooks suite)))
-                  (funcall (get-test test)))
-              (mapc #'run-hook (reverse (suite-after-hooks suite))))))
-      (when (suite-teardown suite)
-        (funcall (suite-teardown suite)))
-      (suite-finish *stats* suite-name)
-      (when (toplevel-stats-p *stats*)
-        (summarize *stats*)))))
+    (with-context (context :name suite-name)
+      (unwind-protect
+          (progn
+            (when (suite-setup suite)
+              (funcall (suite-setup suite)))
+            (dolist (test (suite-tests suite))
+              (unwind-protect
+                  (progn
+                    (mapc #'run-hook (reverse (suite-before-hooks suite)))
+                    (funcall (get-test test)))
+                (mapc #'run-hook (reverse (suite-after-hooks suite))))))
+        (when (suite-teardown suite)
+          (funcall (suite-teardown suite)))))
+    (suite-finish *stats* suite-name)
+    (when (toplevel-stats-p *stats*)
+      (summarize *stats*))))
