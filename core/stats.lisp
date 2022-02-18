@@ -68,8 +68,8 @@
 
 (defun stats-result (stats)
   (if (/= (length (stats-failed-tests stats)) 0)
-      (aref (stats-failed-tests *stats*) 0)
-      (aref (stats-passed-tests *stats*) 0)))
+      (aref (stats-failed-tests stats) 0)
+      (aref (stats-passed-tests stats) 0)))
 
 (defgeneric stats-context-labels (stats)
   (:documentation "Returns the labels of the current contexts (including nested ones)")
