@@ -72,4 +72,4 @@
       (summarize *stats*)
 
       (setf *last-suite-report* *stats*)
-      (values (passedp *stats*) *stats*))))
+      (values (passedp *stats*) (stats-result *stats*)))))
