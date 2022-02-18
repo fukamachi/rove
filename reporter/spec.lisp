@@ -97,10 +97,8 @@
 
 (defmethod summarize ((reporter spec-reporter))
   (let ((stream (reporter-stream reporter)))
-    (format-failure-tests stream (stats-context reporter))
-    (let ((test (if (/= (length (failed-tests reporter)) 0)
-                    (first (failed-tests reporter))
-                    (first (passed-tests reporter)))))
+    (let ((test (stats-result reporter)))
+      (format-failure-tests stream test)
       (let ((passed (passed-tests test))
             (failed (failed-tests test)))
 

@@ -7,6 +7,7 @@
            #:stats
            #:stats-plan
            #:stats-context
+           #:stats-result
            #:stats-context-labels
            #:context-test-count
            #:record
@@ -64,6 +65,11 @@
   (:method ((stats stats))
     (or (first (slot-value stats 'contexts))
         stats)))
+
+(defun stats-result (stats)
+  (if (/= (length (stats-failed-tests stats)) 0)
+      (aref (stats-failed-tests *stats*) 0)
+      (aref (stats-passed-tests *stats*) 0)))
 
 (defgeneric stats-context-labels (stats)
   (:documentation "Returns the labels of the current contexts (including nested ones)")
@@ -163,11 +169,12 @@
   (:method (stats)
     (declare (ignore stats)))
   (:method :before (stats)
-    (with-slots (passed failed pending plan) stats
+    (with-slots (passed failed pending plan contexts) stats
       (setf passed (make-array 0 :adjustable t :fill-pointer 0)
             failed (make-array 0 :adjustable t :fill-pointer 0)
             pending (make-array 0 :adjustable t :fill-pointer 0)
-            plan nil))))
+            plan nil
+            contexts nil))))
 
 (defgeneric summarize (stats)
   (:method (stats)

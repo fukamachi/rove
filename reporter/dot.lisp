@@ -31,6 +31,9 @@
 (defmethod test-finish ((reporter dot-reporter) test-name)
   (declare (ignore test-name))
   (let ((context (stats-context reporter)))
-    (when (toplevel-stats-p reporter)
-      (format-failure-tests (reporter-stream reporter) context))
     (passedp context)))
+
+(defmethod summarize ((reporter dot-reporter))
+  (when (toplevel-stats-p reporter)
+    (let ((test (stats-result reporter)))
+      (format-failure-tests (reporter-stream reporter) test))))
