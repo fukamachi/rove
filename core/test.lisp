@@ -13,8 +13,6 @@
            #:setup
            #:teardown
            #:defhook
-           #:package-tests
-           #:run-test
            #:*default-test-compilation-time*))
 (in-package #:rove/core/test)
 
@@ -93,6 +91,3 @@
                         (:before `(suite-before-hooks (package-suite *package*)))
                         (:after `(suite-after-hooks (package-suite *package*)))))))
          (values)))))
-
-(defun package-tests (package)
-  (suite-tests (package-suite package)))

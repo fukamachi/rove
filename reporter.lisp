@@ -9,7 +9,7 @@
   (:import-from #:bordeaux-threads)
   (:export #:reporter
            #:reporter-stream
-           #:print-message
+           #:*report-stream*
            #:diag
            #:with-reporter
            #:invoke-reporter

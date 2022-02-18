@@ -17,8 +17,7 @@
                 #:find-suite)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
-  (:export #:run-system-tests
-           #:run-suite
+  (:export #:run-suite
            #:all-suites
            #:find-suite
            #:*last-suite-report*

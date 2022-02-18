@@ -8,6 +8,7 @@
   (:import-from #:rove/core/stats
                 #:*stats*
                 #:stats-result
+                #:stats-context
                 #:with-context
                 #:suite-begin
                 #:suite-finish
@@ -127,4 +128,4 @@
     (suite-finish *stats* suite-name)
     (when (toplevel-stats-p *stats*)
       (summarize *stats*))
-    (values (passedp *stats*) (stats-result *stats*))))
+    (values (passedp *stats*) (stats-result (stats-context *stats*)))))
