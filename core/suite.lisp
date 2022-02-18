@@ -45,6 +45,7 @@
       #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
       #-quicklisp (asdf:load-system (asdf:component-name system))
 
+      (initialize *stats*)
       (system-tests-begin *stats* system)
       (with-context (context :name (asdf:component-name system))
         (typecase system

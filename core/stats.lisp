@@ -18,6 +18,7 @@
            #:suite-finish
            #:system-tests-begin
            #:system-tests-finish
+           #:initialize
            #:summarize
            #:toplevel-stats-p
            #:all-failed-assertions))
@@ -157,6 +158,16 @@
 (defgeneric system-tests-finish (stats system)
   (:method (stats system)
     (declare (ignore stats system))))
+
+(defgeneric initialize (stats)
+  (:method (stats)
+    (declare (ignore stats)))
+  (:method :before (stats)
+    (with-slots (passed failed pending plan) stats
+      (setf passed (make-array 0 :adjustable t :fill-pointer 0)
+            failed (make-array 0 :adjustable t :fill-pointer 0)
+            pending (make-array 0 :adjustable t :fill-pointer 0)
+            plan nil))))
 
 (defgeneric summarize (stats)
   (:method (stats)

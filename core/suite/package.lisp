@@ -9,6 +9,7 @@
                 #:*stats*
                 #:suite-begin
                 #:suite-finish
+                #:initialize
                 #:summarize
                 #:toplevel-stats-p)
   (:export #:all-suites
@@ -101,6 +102,8 @@
                   (suite suite)
                   (otherwise (package-suite suite))))
          (suite-name (suite-name suite)))
+    (when (toplevel-stats-p *stats*)
+      (initialize *stats*))
     (suite-begin *stats* suite-name)
     (unwind-protect
         (progn
