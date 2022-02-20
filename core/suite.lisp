@@ -69,5 +69,5 @@
       (system-tests-finish *stats* system)
       (summarize *stats*)
 
-      (setf *last-suite-report* *stats*)
+      (setf *last-suite-report* (stats-result *stats*))
       (values (passedp *stats*) (stats-result *stats*)))))
