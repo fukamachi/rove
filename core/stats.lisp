@@ -109,13 +109,13 @@
   (check-type count integer)
   (setf (stats-plan (stats-context *stats*)) count))
 
-(defgeneric test-begin (stats test-name &optional count)
-  (:method (stats test-name &optional count)
-    (declare (ignore stats test-name count))))
+(defgeneric test-begin (stats description &optional count)
+  (:method (stats description &optional count)
+    (declare (ignore stats description count))))
 
-(defgeneric test-finish (stats test-name)
-  (:method (stats test-name)
-    (declare (ignore stats test-name))))
+(defgeneric test-finish (stats description)
+  (:method (stats description)
+    (declare (ignore stats description))))
 
 (defmethod passedp ((stats stats))
   (and (= 0 (length (stats-failed-tests stats)))
@@ -125,10 +125,10 @@
                  (length (stats-passed-tests stats))
                  (length (stats-pending-tests stats)))))))
 
-(defmacro with-context ((context &key name) &body body)
+(defmacro with-context ((context &key name description) &body body)
   (let ((passedp (gensym "PASSEDP"))
         (test (gensym "TEST")))
-    `(let ((,context (new-context *stats* ,name)))
+    `(let ((,context (new-context *stats* ',name)))
        (declare (ignorable ,context))
        (unwind-protect (progn ,@body)
          (let* ((,context (stats-context *stats*))
@@ -142,7 +142,8 @@
                   (make-instance (if ,passedp
                                      'passed-test
                                      'failed-test)
-                                 :name ,name
+                                 :name ',name
+                                 :description ,description
                                  :passed (coerce (stats-passed-tests (stats-context *stats*)) 'list)
                                  :failed (coerce (stats-failed-tests (stats-context *stats*)) 'list)
                                  :pending (coerce (stats-pending-tests (stats-context *stats*)) 'list))))

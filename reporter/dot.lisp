@@ -28,8 +28,8 @@
   (let ((stream (reporter-stream reporter)))
     (princ (color-text :aqua ".") stream)))
 
-(defmethod test-finish ((reporter dot-reporter) test-name)
-  (declare (ignore test-name))
+(defmethod test-finish ((reporter dot-reporter) description)
+  (declare (ignore description))
   (let ((context (stats-context reporter)))
     (passedp context)))
 

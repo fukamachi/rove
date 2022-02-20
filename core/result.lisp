@@ -22,6 +22,7 @@
 
            #:test
            #:test-name
+           #:test-description
            #:passed-tests
            #:failed-tests
            #:pending-tests
@@ -120,6 +121,8 @@
 (defclass test ()
   ((name :initarg :name
          :reader test-name)
+   (description :initarg :description
+                :reader test-description)
    (passed :initarg :passed
            :initform nil
            :accessor test-passed-tests)

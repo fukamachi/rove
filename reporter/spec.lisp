@@ -64,16 +64,17 @@
       (princ (color-text :aqua (assertion-description object)) stream)
       (fresh-line stream))))
 
-(defmethod test-begin ((reporter spec-reporter) test-name &optional count)
+(defmethod test-begin ((reporter spec-reporter) description &optional count)
   (declare (ignore count))
   (let ((stream (reporter-stream reporter)))
     (fresh-line stream)
-    (when test-name
-      (princ (color-text :white test-name) stream)
+    (when description
+      (princ (color-text :white description) stream)
       (fresh-line stream)
       (incf (stream-indent-level stream) 2))))
 
-(defmethod test-finish ((reporter spec-reporter) test-name)
+(defmethod test-finish ((reporter spec-reporter) description)
+  (declare (ignore description))
   (let* ((context (stats-context reporter))
          (stream (reporter-stream reporter))
          (test-count (context-test-count context)))
@@ -106,6 +107,6 @@
         (if failed
             (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
                     (length failed)
-                    (mapcar #'test-name failed))
+                    (mapcar #'test-description failed))
             (format stream "  All ~D test~:*~P passed.~%"
                     (length passed)))))))
