@@ -3,7 +3,8 @@
   (:use #:cl)
   (:import-from #:uiop
                 #:getenv)
-  (:export #:color-text))
+  (:export #:color-text
+           #:*enable-colors*))
 (in-package #:rove/misc/color)
 
 (defvar *enable-colors*

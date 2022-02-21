@@ -159,9 +159,14 @@ Use `(defhook :after ...)` instead for running after each test.
   (uiop:delete-directory-tree *tmp-directory* validate t :if-does-not-exist :ignore))
 ```
 
-### defhook (mode &body body)
+### defhook (name mode &body body)
 
 Evaluates before/after running a each test in the package.
+
+```common-lisp
+(defhook my-db-hook :before
+  ...)
+```
 
 ### run (package &key style env)
 

@@ -13,9 +13,6 @@
            #:setup
            #:teardown
            #:defhook
-           #:package-tests
-           #:run-test
-           #:run-package-tests
            #:*default-test-compilation-time*))
 (in-package #:rove/core/test)
 
@@ -33,32 +30,36 @@
                  ,(if (eq compile-at :run-time)
                     `(lambda ()
                        (funcall (compile nil '(lambda ()
-                                                (testing ,test-name
+                                                (testing (,test-name :name ,name)
                                                          ,@body)))))
                     `(lambda ()
-                       (testing ,test-name ,@body)))))))
+                       (testing (,test-name :name ,name) ,@body)))))))
 
-(defmacro testing (desc &body body)
-  (let ((main (gensym "MAIN")))
-    `(progn
-       (test-begin *stats* ,desc)
-       (unwind-protect
-            (flet ((,main () ,@body))
-              (if *debug-on-error*
-                  (,main)
-                  (block nil
-                    (handler-bind ((error
-                                     (lambda (e)
-                                       (record *stats*
-                                               (make-instance 'failed-assertion
-                                                              :form t
-                                                              :reason e
-                                                              :stacks (dissect:stack)
-                                                              :labels (and *stats*
-                                                                           (stats-context-labels *stats*))
-                                                              :desc "Raise an error while testing."))
-                                       (return nil))))
-                      (,main)))))
+(defmacro testing (desc-and-options &body body)
+  (destructuring-bind (desc &key name)
+      (if (consp desc-and-options)
+          desc-and-options
+          (list desc-and-options))
+    (let ((main (gensym "MAIN")))
+      `(progn
+         (test-begin *stats* ,desc)
+         (with-context (context :name ,name :description ,desc)
+           (flet ((,main () ,@body))
+             (if *debug-on-error*
+                 (,main)
+                 (block nil
+                   (handler-bind ((error
+                                    (lambda (e)
+                                      (record *stats*
+                                              (make-instance 'failed-assertion
+                                                             :form t
+                                                             :reason e
+                                                             :stacks (dissect:stack)
+                                                             :labels (and *stats*
+                                                                          (stats-context-labels *stats*))
+                                                             :desc "Raise an error while testing."))
+                                      (return nil))))
+                     (,main))))))
          (test-finish *stats* ,desc)))))
 
 (defmacro setup (&body body)
@@ -94,15 +95,3 @@
                         (:before `(suite-before-hooks (package-suite *package*)))
                         (:after `(suite-after-hooks (package-suite *package*)))))))
          (values)))))
-
-(defun package-tests (package)
-  (suite-tests (package-suite package)))
-
-(defun run-package-tests (package)
-  (check-type package package)
-  (let ((test-name (string-downcase (package-name package)))
-        (suite (package-suite package))
-        (*package* package))
-    (test-begin *stats* test-name (length (suite-tests suite)))
-    (unwind-protect (run-suite suite)
-      (test-finish *stats* test-name))))

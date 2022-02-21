@@ -28,9 +28,12 @@
   (let ((stream (reporter-stream reporter)))
     (princ (color-text :aqua ".") stream)))
 
-(defmethod test-finish ((reporter dot-reporter) test-name)
-  (declare (ignore test-name))
-  (multiple-value-bind (passedp context) (call-next-method)
-    (when (toplevel-stats-p reporter)
-      (format-failure-tests (reporter-stream reporter) context))
-    passedp))
+(defmethod test-finish ((reporter dot-reporter) description)
+  (declare (ignore description))
+  (let ((context (stats-context reporter)))
+    (passedp context)))
+
+(defmethod summarize ((reporter dot-reporter))
+  (when (toplevel-stats-p reporter)
+    (let ((test (stats-result reporter)))
+      (format-failure-tests (reporter-stream reporter) test))))

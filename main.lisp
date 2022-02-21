@@ -1,76 +1,28 @@
-(in-package #:cl-user)
-(defpackage #:rove/main
-  (:nicknames #:rove)
+(uiop:define-package #:rove
+  (:nicknames #:rove/main)
   (:use #:cl)
-  (:import-from #:rove/core/assertion
-                #:*debug-on-error*
-                #:ok
-                #:ng
-                #:signals
-                #:outputs
-                #:expands
-                #:pass
-                #:fail
-                #:skip)
-  (:import-from #:rove/core/test
-                #:deftest
-                #:testing
-                #:setup
-                #:teardown
-                #:defhook
-                #:*default-test-compilation-time*)
+  (:use-reexport #:rove/core/assertion)
+  (:use-reexport #:rove/core/test)
+  (:use-reexport #:rove/core/suite)
+  (:use-reexport #:rove/core/result)
+  (:use-reexport #:rove/reporter)
   (:import-from #:rove/core/suite
-                #:run-system-tests
-                #:run-suite
-                #:get-test
-                #:remove-test)
+                #:run-system-tests)
   (:import-from #:rove/core/stats
-                #:*stats*
                 #:plan)
-  (:import-from #:rove/core/result
-                #:form-description)
-  (:import-from #:rove/reporter
-                #:use-reporter
-                #:with-reporter
-                #:diag
-                #:*report-stream*)
   (:import-from #:rove/misc/color
                 #:*enable-colors*)
   (:import-from #:rove/reporter/spec
                 #:spec-reporter)
   (:import-from #:rove/reporter/dot)
   (:import-from #:uiop)
-  (:export #:*debug-on-error*
-           #:ok
-           #:ng
-           #:signals
-           #:outputs
-           #:expands
-           #:pass
-           #:fail
-           #:skip
-           #:deftest
-           #:testing
-           #:setup
-           #:teardown
-           #:defhook
+  (:export #:run
            #:run-test
-           #:run-suite
-           #:run
-           #:remove-test
            #:with-local-envs
            #:*default-reporter*
            #:*default-env*
 
-           #:form-description
-
-           #:*stats*
            #:plan
-
-           #:diag
-           #:with-reporter
-           #:use-reporter
-           #:*report-stream*
            #:*enable-colors*))
 (in-package #:rove/main)
 

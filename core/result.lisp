@@ -22,10 +22,11 @@
 
            #:test
            #:test-name
-           #:test-passed-assertions
-           #:test-failed-assertions
-           #:test-pending-assertions
-           #:test-passed-p
+           #:test-description
+           #:passed-tests
+           #:failed-tests
+           #:pending-tests
+           #:passedp
 
            #:passed-assertion
            #:failed-assertion
@@ -120,19 +121,38 @@
 (defclass test ()
   ((name :initarg :name
          :reader test-name)
+   (description :initarg :description
+                :reader test-description)
    (passed :initarg :passed
            :initform nil
-           :accessor test-passed-assertions)
+           :accessor test-passed-tests)
    (failed :initarg :failed
            :initform nil
-           :accessor test-failed-assertions)
+           :accessor test-failed-tests)
    (pending :initarg :pending
             :initform nil
-            :accessor test-pending-assertions)))
+            :accessor test-pending-tests)))
 
-(defgeneric test-passed-p (test)
-  (:method ((test test))
-    (= 0 (length (test-failed-assertions test)))))
+(defmethod print-object ((test test) stream)
+  (print-unreadable-object (test stream :type t)
+    (format stream "~A (PASSED=~D, FAILED=~D)"
+            (test-name test)
+            (length (test-passed-tests test))
+            (length (test-failed-tests test)))))
+
+(defgeneric passedp (object)
+  (:method ((object test))
+    (= 0 (length (test-failed-tests object)))))
+
+(defgeneric passed-tests (object)
+  (:method ((object test))
+    (test-passed-tests object)))
+(defgeneric failed-tests (object)
+  (:method ((object test))
+    (test-failed-tests object)))
+(defgeneric pending-tests (object)
+  (:method ((object test))
+    (test-pending-tests object)))
 
 (defclass passed-assertion (assertion passed) ())
 (defclass failed-assertion (assertion failed) ())

@@ -5,7 +5,19 @@
                 #:resolve-file
                 #:file-package
                 #:system-packages)
+  (:import-from #:rove/core/stats
+                #:*stats*
+                #:stats-result
+                #:stats-context
+                #:with-context
+                #:suite-begin
+                #:suite-finish
+                #:passedp
+                #:initialize
+                #:summarize
+                #:toplevel-stats-p)
   (:export #:all-suites
+           #:find-suite
            #:system-suites
            #:get-test
            #:set-test
@@ -38,6 +50,7 @@
   teardown
   before-hooks
   after-hooks
+  package
   %tests)
 
 (defun suite-tests (suite)
@@ -51,18 +64,23 @@
     (when (and pathname
                (not (file-package pathname nil)))
       (setf (file-package pathname) package)))
-  (make-suite :name (package-name package)))
+  (make-suite :name (string-downcase (package-name package))
+              :package package))
 
-(defgeneric package-suite (package-designator)
+(defgeneric find-suite (package)
   (:method ((package package))
-    (or (gethash package *package-suites*)
-        (setf (gethash package *package-suites*)
-              (make-new-suite package))))
+    (values (gethash package *package-suites*)))
   (:method (package-name)
     (let ((package (find-package package-name)))
       (unless package
         (error "No package '~A' found" package-name))
-      (package-suite package))))
+      (find-suite package))))
+
+(defun package-suite (package)
+  (or (find-suite package)
+      (let ((package (find-package package)))
+        (setf (gethash package *package-suites*)
+              (make-new-suite package)))))
 
 (defun get-test (name)
   (check-type name symbol)
@@ -86,18 +104,28 @@
     (funcall fn)))
 
 (defun run-suite (suite)
-  (let ((suite (typecase suite
-                 (suite suite)
-                 (otherwise (package-suite suite)))))
-    (unwind-protect
-         (progn
-           (when (suite-setup suite)
-             (funcall (suite-setup suite)))
-           (dolist (test (suite-tests suite))
-             (unwind-protect
+  (let* ((suite (typecase suite
+                  (suite suite)
+                  (otherwise (package-suite suite))))
+         (suite-name (suite-name suite))
+         (*package* (suite-package suite)))
+    (when (toplevel-stats-p *stats*)
+      (initialize *stats*))
+    (suite-begin *stats* suite-name)
+    (with-context (context :name suite-name)
+      (unwind-protect
+          (progn
+            (when (suite-setup suite)
+              (funcall (suite-setup suite)))
+            (dolist (test (suite-tests suite))
+              (unwind-protect
                   (progn
                     (mapc #'run-hook (reverse (suite-before-hooks suite)))
                     (funcall (get-test test)))
-               (mapc #'run-hook (reverse (suite-after-hooks suite))))))
-      (when (suite-teardown suite)
-        (funcall (suite-teardown suite))))))
+                (mapc #'run-hook (reverse (suite-after-hooks suite))))))
+        (when (suite-teardown suite)
+          (funcall (suite-teardown suite)))))
+    (suite-finish *stats* suite-name)
+    (when (toplevel-stats-p *stats*)
+      (summarize *stats*))
+    (values (passedp *stats*) (stats-result (stats-context *stats*)))))

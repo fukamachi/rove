@@ -9,6 +9,8 @@
   (:export #:*debug-on-error*
            #:ok
            #:ng
+           #:assert-ok
+           #:assert-ng
            #:signals
            #:outputs
            #:expands
@@ -96,7 +98,7 @@
   (or *debug-on-error*
       (toplevel-stats-p *stats*)))
 
-(defmacro %okng (form desc class-fn positive &environment env)
+(defmacro %okng (form desc class-fn positive)
   (let* ((form-steps (form-steps form))
          (form (gensym "FORM"))
          (expanded-form (first form-steps))
@@ -131,13 +133,8 @@
 (defun ok-assertion-class (result error)
   (declare (ignore error))
   (if result
-    'passed-assertion
-    'failed-assertion))
-
-(defmacro ok (form &optional desc)
-  `(%okng ,form ,desc
-          #'ok-assertion-class
-          t))
+      'passed-assertion
+      'failed-assertion))
 
 (defun ng-assertion-class (result error)
   (cond
@@ -145,10 +142,17 @@
     (result 'failed-assertion)
     (t 'passed-assertion)))
 
+(defmacro assert-ok (form &optional desc class-fn)
+  `(%okng ,form ,desc ,(or class-fn '#'ok-assertion-class) t))
+
+(defmacro assert-ng (form &optional desc class-fn)
+  `(%okng ,form ,desc ,(or class-fn '#'ng-assertion-class) nil))
+
+(defmacro ok (form &optional desc)
+  `(assert-ok ,form ,desc))
+
 (defmacro ng (form &optional desc)
-  `(%okng ,form ,desc
-          #'ng-assertion-class
-          nil))
+  `(assert-ng ,form ,desc))
 
 (defmacro signals (form &optional (condition ''error))
   "Returns t if given form raise condition of given type,

@@ -64,31 +64,49 @@
       (princ (color-text :aqua (assertion-description object)) stream)
       (fresh-line stream))))
 
-(defmethod test-begin ((reporter spec-reporter) test-name &optional count)
+(defmethod test-begin ((reporter spec-reporter) description &optional count)
   (declare (ignore count))
-  (call-next-method)
   (let ((stream (reporter-stream reporter)))
     (fresh-line stream)
-    (when test-name
-      (princ (color-text :white test-name) stream)
+    (when description
+      (princ (color-text :white description) stream)
       (fresh-line stream)
       (incf (stream-indent-level stream) 2))))
 
-(defmethod test-finish ((reporter spec-reporter) test-name)
-  (multiple-value-bind (passedp context) (call-next-method)
-    (let ((stream (reporter-stream reporter))
-          (test-count (context-test-count context)))
-      (when test-name
-        (decf (stream-indent-level stream) 2))
-      (when (toplevel-stats-p reporter)
-        (format-failure-tests stream context))
-      (when (and (stats-plan context)
-                 (/= (stats-plan context) test-count))
-        (princ
-         (color-text :red
-                     (format nil "× Looks like you planned ~D test~:*~P but ran ~A."
-                             (stats-plan context)
-                             test-count))
-         stream)
-        (fresh-line stream))
-      passedp)))
+(defmethod test-finish ((reporter spec-reporter) description)
+  (declare (ignore description))
+  (let* ((context (stats-context reporter))
+         (stream (reporter-stream reporter))
+         (test-count (context-test-count context)))
+    (decf (stream-indent-level stream) 2)
+    (when (and (stats-plan context)
+               (/= (stats-plan context) test-count))
+      (princ
+        (color-text :red
+                    (format nil "× Looks like you planned ~D test~:*~P but ran ~A."
+                            (stats-plan context)
+                            test-count))
+        stream)
+      (fresh-line stream))
+    (passedp context)))
+
+(defmethod suite-begin ((reporter spec-reporter) suite-name)
+  (format (reporter-stream reporter) "~2&;; testing '~(~A~)'~%" suite-name))
+
+(defmethod system-tests-begin ((reporter spec-reporter) system)
+  (format (reporter-stream reporter) "~2&Testing System ~A~%" (asdf:component-name system)))
+
+(defmethod summarize ((reporter spec-reporter))
+  (let ((stream (reporter-stream reporter)))
+    (let ((test (stats-result reporter)))
+      (format-failure-tests stream test)
+      (let ((passed (passed-tests test))
+            (failed (failed-tests test)))
+
+        (format stream "~2&Summary:~%")
+        (if failed
+            (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
+                    (length failed)
+                    (mapcar #'test-description failed))
+            (format stream "  All ~D test~:*~P passed.~%"
+                    (length passed)))))))
