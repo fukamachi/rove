@@ -91,7 +91,7 @@
     (passedp context)))
 
 (defmethod suite-begin ((reporter spec-reporter) suite-name)
-  (format (reporter-stream reporter) "~2&;; testing '~(~A~)'~%" suite-name))
+  (format (reporter-stream reporter) "~2&;; testing '~A'~%" (string-downcase suite-name)))
 
 (defmethod system-tests-begin ((reporter spec-reporter) system)
   (format (reporter-stream reporter) "~2&Testing System ~A~%" (asdf:component-name system)))
