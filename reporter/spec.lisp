@@ -107,6 +107,6 @@
         (if failed
             (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
                     (length failed)
-                    (mapcar #'test-description failed))
+                    (mapcar #'test-name failed))
             (format stream "  All ~D test~:*~P passed.~%"
                     (length passed)))))))
