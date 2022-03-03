@@ -128,7 +128,7 @@
 (defmacro with-context ((context &key name description) &body body)
   (let ((passedp (gensym "PASSEDP"))
         (test (gensym "TEST")))
-    `(let ((,context (new-context *stats* ',name)))
+    `(let ((,context (new-context *stats* ,name)))
        (declare (ignorable ,context))
        (unwind-protect (progn ,@body)
          (let* ((,context (stats-context *stats*))
@@ -142,7 +142,7 @@
                   (make-instance (if ,passedp
                                      'passed-test
                                      'failed-test)
-                                 :name ',name
+                                 :name ,name
                                  :description ,description
                                  :passed (coerce (stats-passed-tests (stats-context *stats*)) 'list)
                                  :failed (coerce (stats-failed-tests (stats-context *stats*)) 'list)

@@ -30,10 +30,10 @@
                  ,(if (eq compile-at :run-time)
                     `(lambda ()
                        (funcall (compile nil '(lambda ()
-                                                (testing-with-options ,test-name (:name ,name)
+                                                (testing-with-options ,test-name (:name ',name)
                                                   ,@body)))))
                     `(lambda ()
-                       (testing-with-options ,test-name (:name ,name) ,@body)))))))
+                       (testing-with-options ,test-name (:name ',name) ,@body)))))))
 
 (defmacro testing-with-options (desc (&key name) &body body)
   (let ((main (gensym "MAIN")))
