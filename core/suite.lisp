@@ -31,8 +31,10 @@
 (defparameter *rove-standard-output* nil)
 (defparameter *rove-error-output* nil)
 
-(defun run-system-tests (system-designator)
-  (let ((system (asdf:find-system system-designator)))
+(defun run-system-tests (system-designators)
+  (let ((system-designators (if (listp system-designators)
+                                system-designators
+                                (list system-designators))))
     (let ((*stats* (or *stats*
                        (make-instance 'stats)))
           (*standard-output* (or *rove-standard-output*
@@ -40,34 +42,40 @@
           (*error-output* (or *rove-error-output*
                               *error-output*)))
 
-      #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
-      #-quicklisp (asdf:load-system (asdf:component-name system))
-
       (initialize *stats*)
-      (system-tests-begin *stats* system)
-      (with-context (context :name (asdf:component-name system))
-        (typecase system
-          (asdf:package-inferred-system
-            (let* ((package-name (string-upcase (asdf:component-name system)))
-                   (package (find-package package-name)))
-              (unless package
-                (setf package (find-package package-name)))
-              ;; Loading dependencies beforehand
-              (let ((pkgs (system-packages system)))
-                (dolist (package pkgs)
-                  (let ((suite (package-suite package)))
-                    (when suite
-                      (run-suite suite)))))
 
-              (when package
-                (let ((suite (package-suite package)))
-                  (when suite
-                    (run-suite suite))))))
-          (otherwise
-            (dolist (suite (system-suites system))
-              (run-suite suite)))))
-      (system-tests-finish *stats* system)
+      (dolist (system-designator system-designators)
+        (let ((system (asdf:find-system system-designator)))
+          #+quicklisp (ql:quickload (asdf:component-name system) :silent t)
+          #-quicklisp (asdf:load-system (asdf:component-name system))
+
+          (system-tests-begin *stats* system)
+          (with-context (context :name (asdf:component-name system))
+            (typecase system
+              (asdf:package-inferred-system
+                (let* ((package-name (string-upcase (asdf:component-name system)))
+                       (package (find-package package-name)))
+                  (unless package
+                    (setf package (find-package package-name)))
+                  ;; Loading dependencies beforehand
+                  (let ((pkgs (system-packages system)))
+                    (dolist (package pkgs)
+                      (let ((suite (package-suite package)))
+                        (when suite
+                          (run-suite suite)))))
+
+                  (when package
+                    (let ((suite (package-suite package)))
+                      (when suite
+                        (run-suite suite))))))
+              (otherwise
+                (dolist (suite (system-suites system))
+                  (run-suite suite)))))
+          (system-tests-finish *stats* system)))
+
       (summarize *stats*)
 
-      (setf *last-suite-report* (stats-result *stats*))
-      (values (passedp *stats*) (stats-result *stats*)))))
+      (setf *last-suite-report*
+            (list (passedp *stats*)
+                  (stats-results *stats*)))
+      (apply #'values *last-suite-report*))))

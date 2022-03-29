@@ -7,13 +7,17 @@
            #:stats
            #:stats-plan
            #:stats-context
-           #:stats-result
            #:stats-context-labels
+           #:stats-results
+           #:stats-passed-tests
+           #:stats-failed-tests
+           #:stats-pending-tests
            #:context-test-count
            #:record
            #:plan
            #:test-begin
            #:test-finish
+           #:passedp
            #:with-context
            #:suite-begin
            #:suite-finish
@@ -34,6 +38,8 @@
            :accessor stats-failed-tests)
    (pending :initform (make-array 0 :adjustable t :fill-pointer 0)
             :accessor stats-pending-tests)
+   (results :initform '()
+            :accessor stats-results)
    (plan :initarg :plan
          :initform nil
          :accessor stats-plan)
@@ -66,11 +72,6 @@
     (or (first (slot-value stats 'contexts))
         stats)))
 
-(defun stats-result (stats)
-  (if (/= (length (stats-failed-tests stats)) 0)
-      (aref (stats-failed-tests stats) 0)
-      (aref (stats-passed-tests stats) 0)))
-
 (defgeneric stats-context-labels (stats)
   (:documentation "Returns the labels of the current contexts (including nested ones)")
   (:method ((stats stats))
@@ -97,11 +98,14 @@
 
 (defgeneric record (stats object)
   (:method ((stats stats) (object passed))
-    (vector-push-extend object (stats-passed-tests (stats-context stats))))
+    (vector-push-extend object (stats-passed-tests (stats-context stats)))
+    (push object (stats-results (stats-context stats))))
   (:method ((stats stats) (object failed))
-    (vector-push-extend object (stats-failed-tests (stats-context stats))))
+    (vector-push-extend object (stats-failed-tests (stats-context stats)))
+    (push object (stats-results (stats-context stats))))
   (:method ((stats stats) (object pending))
-    (vector-push-extend object (stats-pending-tests (stats-context stats))))
+    (vector-push-extend object (stats-pending-tests (stats-context stats)))
+    (push object (stats-results (stats-context stats))))
   (:method ((stats null) object)
     (declare (ignore object))))
 
