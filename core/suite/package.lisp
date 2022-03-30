@@ -122,11 +122,12 @@
     (declare (ignore name))
     (funcall fn)))
 
-(defun run-suite (suite)
-  (let* ((suite (typecase suite
-                  (suite suite)
-                  (otherwise (package-suite suite))))
-         (suite-name (suite-name suite))
+(defgeneric run-suite (suite)
+  (:method ((suite symbol))
+    (run-suite (package-suite suite))))
+
+(defmethod run-suite ((suite suite))
+  (let* ((suite-name (suite-name suite))
          (*package* (suite-package suite)))
     (when (toplevel-stats-p *stats*)
       (initialize *stats*))
