@@ -79,10 +79,17 @@
 
 (defun run* (target-pattern &rest args &key style env)
   (declare (ignore style env))
-  (let* ((matcher (compile-wild-card target-pattern))
-         (system-names
-           (remove-if-not matcher (asdf:registered-systems))))
-    (apply #'run system-names args)))
+  (let ((target-pattern (etypecase target-pattern
+                          (string target-pattern)
+                          (symbol (let ((*print-case* :downcase))
+                                    (string target-pattern))))))
+    (let ((pattern-/-pos (position #\/ target-pattern)))
+      (asdf:find-system (subseq target-pattern 0 pattern-/-pos) nil))
+    (let* ((matcher (compile-wild-card target-pattern))
+           (system-names
+             (remove-if-not matcher (asdf:registered-systems))))
+      (when system-names
+        (apply #'run system-names args)))))
 
 ;; Enable the default reporter
 (use-reporter *default-reporter*)
