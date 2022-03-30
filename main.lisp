@@ -16,7 +16,9 @@
                 #:spec-reporter)
   (:import-from #:rove/reporter/dot)
   (:import-from #:uiop)
+  (:import-from #:cl-ppcre)
   (:export #:run
+           #:run*
            #:run-test
            #:with-local-envs
            #:*default-reporter*
@@ -63,6 +65,37 @@
   (with-local-envs env
     (with-reporter style
       (run-system-tests target))))
+
+(defun compile-wild-card (pattern)
+  (check-type pattern string)
+  (let* ((regex-string
+           (format nil "^~{~A~}$"
+                   (mapcar (lambda (part)
+                             (if (string= "*" part)
+                                 ".*"
+                                 (ppcre:quote-meta-chars part)))
+                           (ppcre:split "(\\*)" pattern :with-registers-p t))))
+         (re (ppcre:create-scanner regex-string)))
+    (lambda (value)
+      (check-type value string)
+      (and (ppcre:scan re value)
+           t))))
+
+(defun run* (target-pattern &rest args &key style env)
+  (declare (ignore style env))
+  (let ((target-pattern (etypecase target-pattern
+                          (string target-pattern)
+                          (symbol (let ((*print-case* :downcase))
+                                    (princ-to-string target-pattern))))))
+    (let* ((pattern-main-part (first (ppcre:split "\\*" target-pattern :limit 2)))
+           (pattern-/-pos (position #\/ pattern-main-part :from-end t)))
+      (or (asdf:find-system pattern-main-part nil)
+          (asdf:find-system (subseq target-pattern 0 pattern-/-pos) nil)))
+    (let* ((matcher (compile-wild-card target-pattern))
+           (system-names
+             (remove-if-not matcher (asdf:registered-systems))))
+      (when system-names
+        (apply #'run system-names args)))))
 
 ;; Enable the default reporter
 (use-reporter *default-reporter*)

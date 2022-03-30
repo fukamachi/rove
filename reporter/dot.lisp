@@ -35,5 +35,7 @@
 
 (defmethod summarize ((reporter dot-reporter))
   (when (toplevel-stats-p reporter)
-    (let ((test (stats-result reporter)))
-      (format-failure-tests (reporter-stream reporter) test))))
+    (format-failure-tests (reporter-stream reporter)
+                          (stats-passed-tests reporter)
+                          (stats-failed-tests reporter)
+                          (stats-pending-tests reporter))))

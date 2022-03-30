@@ -178,6 +178,14 @@ Evaluates before/after running a each test in the package.
 (run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
 
+### run* (package-pattern &key style env)
+
+Same as `run` except it takes a pattern for test package names.
+
+```common-lisp
+(run* "myapp/tests/*")
+```
+
 ## Coverage report
 
 Coverage report can be enabled by setting the environment variable COVERAGE other than an empty string.

@@ -7,8 +7,8 @@
                 #:system-packages)
   (:import-from #:rove/core/stats
                 #:*stats*
-                #:stats-result
                 #:stats-context
+                #:stats-results
                 #:with-context
                 #:suite-begin
                 #:suite-finish
@@ -44,28 +44,47 @@
             (gethash package *package-suites*))
           (system-packages system)))
 
-(defstruct suite
-  name
-  setup
-  teardown
-  before-hooks
-  after-hooks
-  package
-  %tests)
+(defclass suite ()
+  ((name :type string
+         :initarg :name
+         :initform (error ":name is required")
+         :accessor suite-name)
+   (package :type package
+            :initarg :package
+            :initform (error ":package is required")
+            :accessor suite-package)
+   (setup :type (or function null)
+          :initarg :setup
+          :initform nil
+          :accessor suite-setup)
+   (teardown :type (or function null)
+             :initarg :teardown
+             :initform nil
+             :accessor suite-teardown)
+   (before-hooks :type list
+                 :initarg :before-hooks
+                 :initform '()
+                 :accessor suite-before-hooks)
+   (after-hooks :type list
+                :initarg :after-hooks
+                :initform '()
+                :accessor suite-after-hooks)
+   (%tests :initform '())))
 
 (defun suite-tests (suite)
-  (reverse (remove-if #'null (suite-%tests suite) :key #'get-test)))
+  (reverse (remove-if #'null (slot-value suite '%tests) :key #'get-test)))
 
 (defun (setf suite-tests) (value suite)
-  (setf (suite-%tests suite) value))
+  (setf (slot-value suite '%tests) value))
 
 (defun make-new-suite (package)
   (let ((pathname (resolve-file (or *load-pathname* *compile-file-pathname*))))
     (when (and pathname
                (not (file-package pathname nil)))
       (setf (file-package pathname) package)))
-  (make-suite :name (string-downcase (package-name package))
-              :package package))
+  (make-instance 'suite
+                 :name (string-downcase (package-name package))
+                 :package package))
 
 (defgeneric find-suite (package)
   (:method ((package package))
@@ -88,7 +107,7 @@
 
 (defun set-test (name test-fn)
   (check-type name symbol)
-  (pushnew name (suite-%tests (package-suite *package*))
+  (pushnew name (slot-value (package-suite *package*) '%tests)
            :test 'eq)
   (setf (get name 'test) test-fn)
   name)
@@ -128,4 +147,5 @@
     (suite-finish *stats* suite-name)
     (when (toplevel-stats-p *stats*)
       (summarize *stats*))
-    (values (passedp *stats*) (stats-result (stats-context *stats*)))))
+    (values (passedp *stats*)
+            (stats-results *stats*))))

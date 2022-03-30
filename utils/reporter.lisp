@@ -8,24 +8,24 @@
   (:export #:format-failure-tests))
 (in-package #:rove/utils/reporter)
 
-(defun format-failure-tests (stream test)
+(defun format-failure-tests (stream passed-tests failed-tests pending-tests)
   (fresh-line stream)
   (write-char #\Newline stream)
   (let ((stream (make-indent-stream stream)))
-    (let ((test-count (+ (length (passed-tests test))
-                         (length (failed-tests test))
-                         (length (pending-tests test)))))
-      (if (= 0 (length (failed-tests test)))
+    (let ((test-count (+ (length passed-tests)
+                         (length failed-tests)
+                         (length pending-tests))))
+      (if (= 0 (length failed-tests))
           (princ
            (color-text :green
                        (format nil "✓ ~D test~:*~P completed"
-                               (length (passed-tests test))))
+                               (length passed-tests)))
            stream)
           (progn
             (princ
              (color-text :red
                          (format nil "× ~D of ~D test~:*~P failed"
-                                 (length (failed-tests test))
+                                 (length failed-tests)
                                  test-count))
              stream)
             (let ((failed-tests
@@ -36,7 +36,7 @@
                                   (apply #'append
                                          (mapcar #'assertions
                                                  (failed-tests object)))))))
-                      (loop for object in (failed-tests test)
+                      (loop for object across failed-tests
                             append (assertions object)))))
               (let ((*print-circle* t)
                     (*print-assertion* t))
@@ -90,10 +90,10 @@
                                         do (princ (color-text :gray (dissect:present-object stack nil)) stream)
                                            (fresh-line stream))))))))))))))
   (fresh-line stream)
-  (unless (= 0 (length (pending-tests test)))
+  (unless (= 0 (length pending-tests))
     (princ
      (color-text :aqua
                  (format nil "● ~D test~:*~P skipped"
-                         (length (pending-tests test))))
+                         (length pending-tests)))
      stream)
     (fresh-line stream)))
