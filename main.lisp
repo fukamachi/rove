@@ -68,10 +68,14 @@
 
 (defun compile-wild-card (pattern)
   (check-type pattern string)
-  (let ((re
-          (ppcre:create-scanner
-            (format nil "^~{~A~^.*~}$"
-                    (mapcar #'ppcre:quote-meta-chars (ppcre:split "\\*" pattern))))))
+  (let* ((regex-string
+           (format nil "^~{~A~}$"
+                   (mapcar (lambda (part)
+                             (if (string= "*" part)
+                                 ".*"
+                                 (ppcre:quote-meta-chars part)))
+                           (ppcre:split "(\\*)" pattern :with-registers-p t))))
+         (re (ppcre:create-scanner regex-string)))
     (lambda (value)
       (check-type value string)
       (and (ppcre:scan re value)
@@ -82,7 +86,7 @@
   (let ((target-pattern (etypecase target-pattern
                           (string target-pattern)
                           (symbol (let ((*print-case* :downcase))
-                                    (string target-pattern))))))
+                                    (princ-to-string target-pattern))))))
     (let ((pattern-/-pos (position #\/ target-pattern)))
       (asdf:find-system (subseq target-pattern 0 pattern-/-pos) nil))
     (let* ((matcher (compile-wild-card target-pattern))
