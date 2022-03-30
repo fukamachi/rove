@@ -87,8 +87,10 @@
                           (string target-pattern)
                           (symbol (let ((*print-case* :downcase))
                                     (princ-to-string target-pattern))))))
-    (let ((pattern-/-pos (position #\/ target-pattern)))
-      (asdf:find-system (subseq target-pattern 0 pattern-/-pos) nil))
+    (let* ((pattern-main-part (first (ppcre:split "\\*" target-pattern :limit 2)))
+           (pattern-/-pos (position #\/ pattern-main-part :from-end t)))
+      (or (asdf:find-system pattern-main-part nil)
+          (asdf:find-system (subseq target-pattern 0 pattern-/-pos) nil)))
     (let* ((matcher (compile-wild-card target-pattern))
            (system-names
              (remove-if-not matcher (asdf:registered-systems))))
