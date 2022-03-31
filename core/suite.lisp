@@ -83,7 +83,6 @@
 
       (summarize *stats*)
 
-      (setf *last-suite-report*
-            (list (passedp *stats*)
-                  (stats-results *stats*)))
-      (apply #'values *last-suite-report*))))
+      (setf *last-suite-report* (stats-results *stats*))
+      (values (passedp *stats*)
+              (stats-results *stats*)))))

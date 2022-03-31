@@ -56,7 +56,7 @@ exec ros -Q -- $0 "$@"
              (setf (gethash missing tries-so-far) t)
              (ql:quickload missing :silent t)
              (go retry)))))
-    (rove:passedp rove/core/suite:*last-suite-report*)))
+    (every #'rove:passedp rove/core/suite:*last-suite-report*)))
 
 (defmacro case-equal (keyform &body cases)
   (let ((g-keyform (gensym "KEYFORM")))
