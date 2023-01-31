@@ -18,6 +18,30 @@
 
 (defvar *default-test-compilation-time* :definition-time)
 
+(defun call-with-testing-with-options (desc name function)
+  (test-begin *stats* desc)
+  (unwind-protect
+       (with-context (context :name name :description desc)
+         (if *debug-on-error*
+             (funcall function)
+             (block nil
+               (handler-bind ((error
+                                (lambda (e)
+                                  (record *stats*
+                                          (make-instance 'failed-assertion
+                                                         :form t
+                                                         :reason e
+                                                         :stacks (dissect:stack)
+                                                         :labels (and *stats*
+                                                                      (stats-context-labels *stats*))
+                                                         :desc "Raise an error while testing."))
+                                  (return nil))))
+                 (funcall function)))))
+    (test-finish *stats* desc)))
+
+(defmacro with-testing-with-options (desc (&key name) &body body)
+  `(call-with-testing-with-options ,desc ,name (lambda () ,@body)))
+
 (defmacro deftest (name-and-options &body body)
   (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
       (if (consp name-and-options)
@@ -30,36 +54,13 @@
                  ,(if (eq compile-at :run-time)
                     `(lambda ()
                        (funcall (compile nil '(lambda ()
-                                                (testing-with-options ,test-name (:name ',name)
+                                                (with-testing-with-options ,test-name (:name ',name)
                                                   ,@body)))))
                     `(lambda ()
-                       (testing-with-options ,test-name (:name ',name) ,@body)))))))
-
-(defmacro testing-with-options (desc (&key name) &body body)
-  (let ((main (gensym "MAIN")))
-    `(progn
-       (test-begin *stats* ,desc)
-       (with-context (context :name ,name :description ,desc)
-         (flet ((,main () ,@body))
-           (if *debug-on-error*
-               (,main)
-               (block nil
-                 (handler-bind ((error
-                                  (lambda (e)
-                                    (record *stats*
-                                            (make-instance 'failed-assertion
-                                                           :form t
-                                                           :reason e
-                                                           :stacks (dissect:stack)
-                                                           :labels (and *stats*
-                                                                        (stats-context-labels *stats*))
-                                                           :desc "Raise an error while testing."))
-                                    (return nil))))
-                   (,main))))))
-       (test-finish *stats* ,desc))))
+                       (with-testing-with-options ,test-name (:name ',name) ,@body)))))))
 
 (defmacro testing (desc &body body)
-  `(testing-with-options ,desc () ,@body))
+  `(with-testing-with-options ,desc () ,@body))
 
 (defmacro setup (&body body)
   `(progn
