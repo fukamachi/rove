@@ -20,6 +20,7 @@
   (:export #:run
            #:run*
            #:run-test
+           #:run-tests
            #:with-local-envs
            #:*default-reporter*
            #:*default-env*
@@ -53,13 +54,22 @@
 (defgeneric run (target &key style env)
   (:documentation "Run a test package."))
 
-(defmethod run-test (test-name &key (style :spec))
+(defun ensure-test (test-name)
   (let ((test (get-test test-name)))
     (unless test
       (error "No test found for ~S" test-name))
+    test))
+
+(defmethod run-test (test-name &key (style :spec))
+  (let ((test (ensure-test test-name)))
     (with-reporter style
       (testing nil
-               (funcall test)))))
+        (funcall test)))))
+
+(defmethod run-tests (test-names &key (style :spec))
+  (let ((tests (mapcar #'ensure-test test-names)))
+    (with-reporter style
+      (run-test-functions tests))))
 
 (defmethod run (target &key (style *default-reporter*) (env *default-env*))
   (with-local-envs env
