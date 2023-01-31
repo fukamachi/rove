@@ -18,7 +18,7 @@
 
 (defvar *default-test-compilation-time* :definition-time)
 
-(defmacro testing-with-options (desc (&key name) &body body)
+(defmacro with-testing-with-options (desc (&key name) &body body)
   (let ((main (gensym "MAIN")))
     `(progn
        (test-begin *stats* ,desc)
@@ -53,13 +53,13 @@
                  ,(if (eq compile-at :run-time)
                     `(lambda ()
                        (funcall (compile nil '(lambda ()
-                                                (testing-with-options ,test-name (:name ',name)
+                                                (with-testing-with-options ,test-name (:name ',name)
                                                   ,@body)))))
                     `(lambda ()
-                       (testing-with-options ,test-name (:name ',name) ,@body)))))))
+                       (with-testing-with-options ,test-name (:name ',name) ,@body)))))))
 
 (defmacro testing (desc &body body)
-  `(testing-with-options ,desc () ,@body))
+  `(with-testing-with-options ,desc () ,@body))
 
 (defmacro setup (&body body)
   `(progn
