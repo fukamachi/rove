@@ -18,6 +18,7 @@
                 #:system-packages)
   (:export #:run-suite
            #:run-system
+           #:run-test-functions
            #:all-suites
            #:find-suite
            #:*last-suite-report*
@@ -65,24 +66,34 @@
             (run-suite suite)))))
     (system-tests-finish *stats* system)))
 
+(defun call-with-suite (function)
+  (let ((*stats* (or *stats*
+                     (make-instance 'stats)))
+        (*standard-output* (or *rove-standard-output*
+                               *standard-output*))
+        (*error-output* (or *rove-error-output*
+                            *error-output*)))
+    (initialize *stats*)
+
+    (funcall function)
+
+    (summarize *stats*)
+
+    (setf *last-suite-report* (stats-results *stats*))
+    (values (passedp *stats*)
+            (stats-results *stats*))))
+
 (defun run-system-tests (system-designators)
   (let ((system-designators (if (listp system-designators)
                                 system-designators
                                 (list system-designators))))
-    (let ((*stats* (or *stats*
-                       (make-instance 'stats)))
-          (*standard-output* (or *rove-standard-output*
-                                 *standard-output*))
-          (*error-output* (or *rove-error-output*
-                              *error-output*)))
+    (call-with-suite
+     (lambda ()
+       (dolist (system system-designators)
+         (run-system system))))))
 
-      (initialize *stats*)
-
-      (dolist (system system-designators)
-        (run-system system))
-
-      (summarize *stats*)
-
-      (setf *last-suite-report* (stats-results *stats*))
-      (values (passedp *stats*)
-              (stats-results *stats*)))))
+(defun run-test-functions (test-functions)
+  (call-with-suite
+   (lambda ()
+     (dolist (test test-functions)
+       (funcall test)))))
