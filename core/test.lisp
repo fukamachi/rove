@@ -18,23 +18,6 @@
 
 (defvar *default-test-compilation-time* :definition-time)
 
-(defmacro deftest (name-and-options &body body)
-  (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
-      (if (consp name-and-options)
-          name-and-options
-          (list name-and-options))
-    (check-type compile-at (member :run-time :definition-time))
-    (let ((test-name (let ((*print-case* :downcase))
-                       (princ-to-string name))))
-      `(set-test ',name
-                 ,(if (eq compile-at :run-time)
-                    `(lambda ()
-                       (funcall (compile nil '(lambda ()
-                                                (testing-with-options ,test-name (:name ',name)
-                                                  ,@body)))))
-                    `(lambda ()
-                       (testing-with-options ,test-name (:name ',name) ,@body)))))))
-
 (defmacro testing-with-options (desc (&key name) &body body)
   (let ((main (gensym "MAIN")))
     `(progn
@@ -57,6 +40,23 @@
                                     (return nil))))
                    (,main))))))
        (test-finish *stats* ,desc))))
+
+(defmacro deftest (name-and-options &body body)
+  (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
+      (if (consp name-and-options)
+          name-and-options
+          (list name-and-options))
+    (check-type compile-at (member :run-time :definition-time))
+    (let ((test-name (let ((*print-case* :downcase))
+                       (princ-to-string name))))
+      `(set-test ',name
+                 ,(if (eq compile-at :run-time)
+                    `(lambda ()
+                       (funcall (compile nil '(lambda ()
+                                                (testing-with-options ,test-name (:name ',name)
+                                                  ,@body)))))
+                    `(lambda ()
+                       (testing-with-options ,test-name (:name ',name) ,@body)))))))
 
 (defmacro testing (desc &body body)
   `(testing-with-options ,desc () ,@body))
