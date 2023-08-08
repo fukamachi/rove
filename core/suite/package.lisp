@@ -105,11 +105,14 @@
   (check-type name symbol)
   (get name 'test))
 
-(defun set-test (name test-fn)
+(defun set-test (name test-fn &optional tags)
   (check-type name symbol)
   (pushnew name (slot-value (package-suite *package*) '%tests)
            :test 'eq)
   (setf (get name 'test) test-fn)
+  (setf (get name 'test-tags) (if (listp tags)
+                                  tags
+                                  (list tags)))
   name)
 
 (defun remove-test (name)
@@ -122,30 +125,35 @@
     (declare (ignore name))
     (funcall fn)))
 
-(defgeneric run-suite (suite)
-  (:method ((suite symbol))
-    (run-suite (package-suite suite))))
+(defgeneric run-suite (suite &optional pred)
+  (:method ((suite symbol) &optional pred)
+    (run-suite (package-suite suite) pred)))
 
-(defmethod run-suite ((suite suite))
+(defmethod run-suite ((suite suite) &optional pred)
   (let* ((suite-name (suite-name suite))
          (*package* (suite-package suite)))
     (when (toplevel-stats-p *stats*)
       (initialize *stats*))
-    (suite-begin *stats* suite-name)
-    (with-context (context :name suite-name)
-      (unwind-protect
-          (progn
-            (when (suite-setup suite)
-              (funcall (suite-setup suite)))
-            (dolist (test (suite-tests suite))
-              (unwind-protect
-                  (progn
-                    (mapc #'run-hook (reverse (suite-before-hooks suite)))
-                    (funcall (get-test test)))
-                (mapc #'run-hook (reverse (suite-after-hooks suite))))))
-        (when (suite-teardown suite)
-          (funcall (suite-teardown suite)))))
-    (suite-finish *stats* suite-name)
+    (let ((tests (remove-if-not (or pred (constantly t))
+                                (suite-tests suite))))
+      (when tests
+        (suite-begin *stats* suite-name)
+        (with-context (context :name suite-name)
+          (unwind-protect
+               (progn
+                 (when (suite-setup suite)
+                   (funcall (suite-setup suite)))
+                 (dolist (test (suite-tests suite))
+                   (when (or (null pred)
+                             (funcall pred test))
+                     (unwind-protect
+                          (progn
+                            (mapc #'run-hook (reverse (suite-before-hooks suite)))
+                            (funcall (get-test test)))
+                       (mapc #'run-hook (reverse (suite-after-hooks suite)))))))
+            (when (suite-teardown suite)
+              (funcall (suite-teardown suite)))))
+        (suite-finish *stats* suite-name)))
     (when (toplevel-stats-p *stats*)
       (summarize *stats*))
     (values (passedp *stats*)

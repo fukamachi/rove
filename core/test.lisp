@@ -43,7 +43,7 @@
   `(call-with-testing-with-options ,desc ,name (lambda () ,@body)))
 
 (defmacro deftest (name-and-options &body body)
-  (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
+  (destructuring-bind (name &key (compile-at *default-test-compilation-time*) tags)
       (if (consp name-and-options)
           name-and-options
           (list name-and-options))
@@ -57,7 +57,8 @@
                                                 (with-testing-with-options ,test-name (:name ',name)
                                                   ,@body)))))
                     `(lambda ()
-                       (with-testing-with-options ,test-name (:name ',name) ,@body)))))))
+                       (with-testing-with-options ,test-name (:name ',name) ,@body)))
+                 ,tags))))
 
 (defmacro testing (desc &body body)
   `(with-testing-with-options ,desc () ,@body))
