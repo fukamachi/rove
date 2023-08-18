@@ -114,9 +114,10 @@
   (with-slots (desc form values negative) assertion
     (or desc
         ;; Default description
-        (if (consp form)
-            (form-description (first form) (rest form) values :negative negative)
-            (format nil "Expect ~W to be ~:[true~;false~]." form negative)))))
+        (setf desc
+              (if (consp form)
+                (form-description (first form) (rest form) values :negative negative)
+                  (format nil "Expect ~W to be ~:[true~;false~]." form negative))))))
 
 (defclass test ()
   ((name :initarg :name
