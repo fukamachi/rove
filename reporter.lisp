@@ -3,9 +3,14 @@
   (:use #:cl)
   (:import-from #:rove/core/stats
                 #:stats
-                #:*stats*)
+                #:*stats*
+                #:stats-results)
   (:import-from #:rove/reporter/registry
                 #:get-reporter)
+  (:import-from #:rove/core/result
+                #:passed-tests
+                #:failed-tests
+                #:pending-tests)
   (:import-from #:bordeaux-threads)
   (:export #:reporter
            #:reporter-stream
@@ -17,10 +22,29 @@
 (in-package #:rove/reporter)
 
 (defvar *report-stream* (make-synonym-stream '*standard-output*))
+(defvar *single-test-summarize-preference* t)
 
 (defclass reporter (stats)
   ((stream :initarg :stream
            :accessor reporter-stream)))
+
+(defmethod passed-tests ((reporter reporter))
+  (if (and *single-test-summarize-preference*
+           (null (rest (stats-results reporter))))
+      (passed-tests (first (stats-results reporter)))
+      (call-next-method)))
+
+(defmethod failed-tests ((reporter reporter))
+  (if (and *single-test-summarize-preference*
+           (null (rest (stats-results reporter))))
+      (failed-tests (first (stats-results reporter)))
+      (call-next-method)))
+
+(defmethod pending-tests ((reporter reporter))
+  (if (and *single-test-summarize-preference*
+           (null (rest (stats-results reporter))))
+      (pending-tests (first (stats-results reporter)))
+      (call-next-method)))
 
 (defun make-reporter (style &key (stream *report-stream*))
   (let ((class-name (get-reporter style)))
