@@ -97,18 +97,16 @@
   (format (reporter-stream reporter) "~2&Testing System ~A~%" (asdf:component-name system)))
 
 (defmethod summarize ((reporter spec-reporter))
-  (let ((stream (reporter-stream reporter)))
-    (format-failure-tests stream
-                          (stats-passed-tests reporter)
-                          (stats-failed-tests reporter)
-                          (stats-pending-tests reporter))
-    (let ((passed (stats-passed-tests reporter))
-          (failed (stats-failed-tests reporter)))
+  (let ((stream (reporter-stream reporter))
+        (passed (passed-tests reporter))
+        (failed (failed-tests reporter))
+        (pending (pending-tests reporter)))
+    (format-failure-tests stream passed failed pending)
 
-      (format stream "~2&Summary:~%")
-      (if (= 0 (length failed))
-          (format stream "  All ~D test~:*~P passed.~%"
-                  (length passed))
-          (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
-                  (length failed)
-                  (map 'list #'test-name failed))))))
+    (format stream "~2&Summary:~%")
+    (if (= 0 (length failed))
+      (format stream "  All ~D test~:*~P passed.~%"
+              (length passed))
+      (format stream "  ~D test~:*~P failed.~{~%    - ~A~}~%"
+              (length failed)
+              (map 'list #'test-name failed)))))
