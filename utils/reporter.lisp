@@ -36,8 +36,8 @@
                                   (apply #'append
                                          (mapcar #'assertions
                                                  (failed-tests object)))))))
-                      (loop for object across failed-tests
-                            append (assertions object)))))
+                      (loop for test in failed-tests
+                            append (assertions test)))))
               (let ((*print-circle* t)
                     (*print-assertion* t))
                 (loop for i from 0
