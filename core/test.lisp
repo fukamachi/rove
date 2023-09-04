@@ -38,11 +38,12 @@
                                                          :desc "Raise an error while testing."))
                                   (return nil))))
                  (funcall function)))))
-    (when (and *abort-on-error* (not (passedp (stats-context *stats*))))
+    (when (and *abort-on-error*
+               (not (passedp (stats-context *stats*))))
       (format t "Failed test, with the abort option enabled. ~%")
       (abort))
 
-    (test-finish *stats* desc))))
+    (test-finish *stats* desc)))
 
 (defmacro with-testing-with-options (desc (&key name) &body body)
   `(call-with-testing-with-options ,desc ,name (lambda () ,@body)))
