@@ -16,7 +16,7 @@
 (defun print-source-location-as-github-url (stream file line)
   (when (uiop:getenv "GITHUB_ACTIONS")
     (format stream "~&at https://github.com/~A/blob/~A/~A#L~A~%"
-            (uiop:getenv "GITHUB_ACTION_REPOSITORY")
+            (uiop:getenv "GITHUB_REPOSITORY")
             (uiop:getenv "GITHUB_REF_NAME")
             (enough-namestring file
                                (uiop:ensure-directory-pathname (uiop:getenv "GITHUB_WORKSPACE")))
