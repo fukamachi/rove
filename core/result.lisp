@@ -18,6 +18,7 @@
            #:assertion-stacks
            #:assertion-labels
            #:assertion-description
+           #:assertion-source-location
            #:dump-details
 
            #:test
@@ -68,7 +69,10 @@
    (desc :initarg :desc
          :initform nil)
    (negative :initarg :negative
-             :initform nil)))
+             :initform nil)
+   (source-location :initarg :source-location
+                    :initform nil
+                    :reader assertion-source-location)))
 
 (defmethod print-object ((assertion assertion) stream)
   (if *print-assertion*
