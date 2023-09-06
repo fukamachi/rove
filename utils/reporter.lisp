@@ -5,8 +5,6 @@
         #:rove/core/result
         #:rove/misc/stream
         #:rove/misc/color)
-  (:import-from #:rove/core/source-location
-                #:source-location-file-position)
   (:export #:format-failure-tests))
 (in-package #:rove/utils/reporter)
 
@@ -27,10 +25,10 @@
 (defun print-source-location (stream assertion &key (type :file))
   (let ((source-location (assertion-source-location assertion)))
     (when source-location
-      (destructuring-bind (file line column)
-          (source-location-file-position source-location)
+      (destructuring-bind (file line col)
+          source-location
         (ecase type
-          (:file (print-source-location-as-file-path stream file line column))
+          (:file (print-source-location-as-file-path stream file line col))
           (:github (print-source-location-as-github-url stream file line)))))))
 
 (defun format-failure-tests (stream passed-tests failed-tests pending-tests)
