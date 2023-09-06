@@ -10,6 +10,14 @@
   (:export #:format-failure-tests))
 (in-package #:rove/utils/reporter)
 
+(defun print-source-location (stream assertion)
+  (let ((source-location (assertion-source-location assertion)))
+    (when source-location
+      (destructuring-bind (file line column)
+          (source-location-file-position source-location)
+        (format stream "~&at ~A~@[:~A~]~@[:~A~]~%"
+                file line column)))))
+
 (defun format-failure-tests (stream passed-tests failed-tests pending-tests)
   (fresh-line stream)
   (write-char #\Newline stream)
@@ -68,12 +76,8 @@
                               (color-text :white
                                           (assertion-description f))
                               stream)
-                             (let ((source-location (assertion-source-location f)))
-                               (when source-location
-                                 (destructuring-bind (file line column)
-                                     (source-location-file-position source-location)
-                                   (format stream "~&    at ~A~@[:~A~]~@[:~A~]~%"
-                                           file line column))))))
+                             (with-indent (stream +4)
+                               (print-source-location stream f))))
                          (fresh-line stream)
                          (with-indent (stream (+ (length (write-to-string i)) 2))
                            (when (assertion-reason f)
