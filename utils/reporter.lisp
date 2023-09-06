@@ -72,7 +72,7 @@
                                (when source-location
                                  (destructuring-bind (file pos)
                                      (source-location-file-position source-location)
-                                   (format stream "~&    at ~A:~A~%"
+                                   (format stream "~&    at ~A~@[:~A~]~%"
                                            file pos))))))
                          (fresh-line stream)
                          (with-indent (stream (+ (length (write-to-string i)) 2))

@@ -30,8 +30,8 @@
               (*sf-index* 0)
               (*target-sf-index* (1+ sf-index)))
           (read in))
-      (form-found ()))
-    (file-position in)))
+      (form-found () (file-position in))
+      (end-of-file ()))))
 
 (defun source-location ()
   #-sbcl nil
