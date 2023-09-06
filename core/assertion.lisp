@@ -4,8 +4,6 @@
         #:rove/core/stats
         #:rove/core/result)
   (:shadow #:continue)
-  (:import-from #:rove/core/source-location
-                #:source-location)
   (:import-from #:dissect
                 #:stack)
   (:export #:*debug-on-error*
@@ -101,6 +99,13 @@
   (or *debug-on-error*
       (toplevel-stats-p *stats*)))
 
+(defun source-filename ()
+  #-sbcl nil
+  #+sbcl
+  (let ((sb-source (sb-c::make-definition-source-location)))
+    (and sb-source
+         (sb-c:definition-source-location-namestring sb-source))))
+
 (defmacro %okng (form desc class-fn positive)
   (let* ((form-steps (form-steps form))
          (form (gensym "FORM"))
@@ -111,14 +116,22 @@
          (steps (gensym "STEPS"))
          (e (gensym "E"))
          (start (gensym "START"))
-         (block-label (gensym "BLOCK")))
+         (block-label (gensym "BLOCK"))
+         (source-location (gensym "SOURCE-LOCATION"))
+         (file (source-filename)))
     `(let* ((,start (get-internal-real-time))
             (,form ',expanded-form)
-            (,steps ',(reverse form-steps)))
+            (,steps ',(reverse form-steps))
+            (,source-location
+              #-sbcl nil
+              #+sbcl
+              ,(if file
+                   `(cons ,file (multiple-value-list (sb-c::compile-file-line)))
+                   nil)))
        (block ,block-label
          (handler-bind
              ((error (lambda (,e)
-                       (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,class-fn ,positive ',(source-location))
+                       (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,class-fn ,positive ,source-location)
                        (unless (debug-on-error-p)
                          (return-from ,block-label *fail*)))))
            (multiple-value-bind (,result ,args-symbols ,args-values)
@@ -132,7 +145,7 @@
                            ,desc
                            ,class-fn
                            ,positive
-                           ',(source-location))))))))
+                           ,source-location)))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))
