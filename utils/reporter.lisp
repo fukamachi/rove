@@ -70,10 +70,10 @@
                               stream)
                              (let ((source-location (assertion-source-location f)))
                                (when source-location
-                                 (destructuring-bind (file pos)
+                                 (destructuring-bind (file line column)
                                      (source-location-file-position source-location)
-                                   (format stream "~&    at ~A~@[:~A~]~%"
-                                           file pos))))))
+                                   (format stream "~&    at ~A~@[:~A~]~@[:~A~]~%"
+                                           file line column))))))
                          (fresh-line stream)
                          (with-indent (stream (+ (length (write-to-string i)) 2))
                            (when (assertion-reason f)
