@@ -5,6 +5,8 @@
         #:rove/core/result
         #:rove/misc/stream
         #:rove/misc/color)
+  (:import-from #:rove/core/source-location
+                #:source-location-file-position)
   (:export #:format-failure-tests))
 (in-package #:rove/utils/reporter)
 
@@ -65,7 +67,13 @@
                              (princ
                               (color-text :white
                                           (assertion-description f))
-                              stream)))
+                              stream)
+                             (let ((source-location (assertion-source-location f)))
+                               (when source-location
+                                 (destructuring-bind (file pos)
+                                     (source-location-file-position source-location)
+                                   (format stream "~&    at ~A:~A~%"
+                                           file pos))))))
                          (fresh-line stream)
                          (with-indent (stream (+ (length (write-to-string i)) 2))
                            (when (assertion-reason f)
