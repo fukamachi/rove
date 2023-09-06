@@ -4,6 +4,8 @@
         #:rove/core/stats
         #:rove/core/result)
   (:shadow #:continue)
+  (:import-from #:rove/core/source-location
+                #:source-location)
   (:import-from #:dissect
                 #:stack)
   (:export #:*debug-on-error*
@@ -66,7 +68,7 @@
                    ,args-values))
         `(values ,form nil nil))))
 
-(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc class-fn positive)
+(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc class-fn positive source-location)
   (let ((assertion
           (make-instance (funcall class-fn
                                   (if (eq result *fail*)
@@ -83,12 +85,13 @@
                          :stacks stacks
                          :labels (and *stats*
                                       (stats-context-labels *stats*))
-                         :negative (not positive))))
+                         :negative (not positive)
+                         :source-location source-location)))
     (record *stats* assertion)
     result))
 
-(defun record-error (form steps reason duration description class-fn positive)
-  (%okng-record form *fail* nil nil steps (dissect:stack) reason duration description class-fn positive))
+(defun record-error (form steps reason duration description class-fn positive source-location)
+  (%okng-record form *fail* nil nil steps (dissect:stack) reason duration description class-fn positive source-location))
 
 (defun calc-duration (start)
   (truncate (- (get-internal-real-time) start)
@@ -115,7 +118,7 @@
        (block ,block-label
          (handler-bind
              ((error (lambda (,e)
-                       (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,class-fn ,positive)
+                       (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,class-fn ,positive ',(source-location))
                        (unless (debug-on-error-p)
                          (return-from ,block-label *fail*)))))
            (multiple-value-bind (,result ,args-symbols ,args-values)
@@ -128,7 +131,8 @@
                            (calc-duration ,start)
                            ,desc
                            ,class-fn
-                           ,positive)))))))
+                           ,positive
+                           ',(source-location))))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))

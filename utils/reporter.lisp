@@ -5,8 +5,33 @@
         #:rove/core/result
         #:rove/misc/stream
         #:rove/misc/color)
+  (:import-from #:rove/core/source-location
+                #:source-location-file-position)
   (:export #:format-failure-tests))
 (in-package #:rove/utils/reporter)
+
+(defun print-source-location-as-file-path (stream file line column)
+  (format stream "~&at ~A~@[:~A~]~@[:~A~]~%"
+          (enough-namestring file)
+          line column))
+
+(defun print-source-location-as-github-url (stream file line)
+  (when (uiop:getenv "GITHUB_ACTIONS")
+    (format stream "~&at https://github.com/~A/blob/~A/~A#L~A~%"
+            (uiop:getenv "GITHUB_ACTION_REPOSITORY")
+            (uiop:getenv "GITHUB_REF_NAME")
+            (enough-namestring file
+                               (uiop:ensure-directory-pathname (uiop:getenv "GITHUB_WORKSPACE")))
+            line)))
+
+(defun print-source-location (stream assertion &key (type :file))
+  (let ((source-location (assertion-source-location assertion)))
+    (when source-location
+      (destructuring-bind (file line column)
+          (source-location-file-position source-location)
+        (ecase type
+          (:file (print-source-location-as-file-path stream file line column))
+          (:github (print-source-location-as-github-url stream file line)))))))
 
 (defun format-failure-tests (stream passed-tests failed-tests pending-tests)
   (fresh-line stream)
@@ -65,7 +90,13 @@
                              (princ
                               (color-text :white
                                           (assertion-description f))
-                              stream)))
+                              stream)
+                             (with-indent (stream +4)
+                               (print-source-location stream f
+                                                      :type
+                                                      (if (uiop:getenv "GITHUB_ACTIONS")
+                                                          :github
+                                                          :file)))))
                          (fresh-line stream)
                          (with-indent (stream (+ (length (write-to-string i)) 2))
                            (when (assertion-reason f)
