@@ -8,9 +8,15 @@
   (:export #:format-failure-tests))
 (in-package #:rove/utils/reporter)
 
+(defun enough-namestring* (path &optional (defaults *default-pathname-defaults*))
+  (let ((enough-path (enough-namestring path defaults)))
+    (format nil "~@[~*./~]~A"
+            (not (uiop:absolute-pathname-p enough-path))
+            enough-path)))
+
 (defun print-source-location-as-file-path (stream file line column)
   (format stream "~&at ~A~@[:~A~]~@[:~A~]~%"
-          (enough-namestring file)
+          (enough-namestring* file)
           line column))
 
 (defun print-source-location-as-github-url (stream file line)
