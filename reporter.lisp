@@ -78,9 +78,9 @@
 (defgeneric invoke-reporter (repoter function))
 (defmethod invoke-reporter (reporter function)
   (let ((*stats* reporter)
-        (bt:*default-special-bindings*
+        (bt2:*default-special-bindings*
           (append `((*stats* . ,*stats*))
-                  bt:*default-special-bindings*)))
+                  bt2:*default-special-bindings*)))
     (funcall function)))
 
 (defun use-reporter (style)
