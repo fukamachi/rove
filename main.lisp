@@ -63,8 +63,10 @@
 (defmethod run-test (test-name &key (style :spec))
   (let ((test (ensure-test test-name)))
     (with-reporter style
-      (testing nil
-        (funcall test)))))
+      (let ((result (testing nil
+                      (funcall test))))
+        (values (passedp rove/core/stats:*stats*)
+                result)))))
 
 (defmethod run-tests (test-names &key (style :spec))
   (let ((tests (mapcar #'ensure-test test-names)))
