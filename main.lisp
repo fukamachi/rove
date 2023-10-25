@@ -51,7 +51,7 @@
 (defgeneric run-test (test-name &key style)
   (:documentation "Run a single test function."))
 
-(defgeneric run (target &key style env)
+(defgeneric run (target &key style env tags)
   (:documentation "Run a test package."))
 
 (defun ensure-test (test-name)
@@ -73,10 +73,18 @@
     (with-reporter style
       (run-test-functions tests))))
 
-(defmethod run (target &key (style *default-reporter*) (env *default-env*))
+(defmethod run (target &key (style *default-reporter*) (env *default-env*) tags)
   (with-local-envs env
     (with-reporter style
-      (run-system-tests target))))
+      (run-system-tests target
+                        (if tags
+                            (lambda (test-name)
+                              (some (lambda (tag)
+                                      (find tag
+                                            (get test-name 'rove/core/suite/package::test-tags)
+                                            :test 'string-equal))
+                                    tags))
+                            nil)))))
 
 (defun compile-wild-card (pattern)
   (check-type pattern string)
