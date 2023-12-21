@@ -32,6 +32,9 @@
            #:run-suite))
 (in-package #:rove/core/suite/package)
 
+(deftype string-designator () '(or character string symbol))
+(deftype package-designator () '(or package string-designator))
+
 (defvar *package-suites*
   (make-hash-table :test 'eq))
 
@@ -90,12 +93,14 @@
   (:method ((package package))
     (values (gethash package *package-suites*)))
   (:method (package-name)
+    (check-type package-name string-designator)
     (let ((package (find-package package-name)))
       (unless package
         (error "No package '~A' found" package-name))
       (find-suite package))))
 
 (defun package-suite (package)
+  (check-type package package-designator)
   (or (find-suite package)
       (let ((package (find-package package)))
         (setf (gethash package *package-suites*)
@@ -123,7 +128,7 @@
     (funcall fn)))
 
 (defgeneric run-suite (suite)
-  (:method ((suite symbol))
+  (:method (suite)
     (run-suite (package-suite suite))))
 
 (defmethod run-suite ((suite suite))
