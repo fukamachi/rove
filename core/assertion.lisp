@@ -7,6 +7,7 @@
   (:import-from #:dissect
                 #:stack)
   (:export #:*debug-on-error*
+           #:*quit-on-failure*
            #:ok
            #:ng
            #:assert-ok
@@ -23,6 +24,11 @@
   (let ((debug-on-error-symbol (intern (string :*rove-debug-on-error*) :cl-user)))
     (and (boundp debug-on-error-symbol)
 	 (symbol-value debug-on-error-symbol))))
+
+(defvar *quit-on-failure*
+  (let ((quit-on-failure-symbol (intern (string :*rove-quit-on-failure*) :cl-user)))
+    (and (boundp quit-on-failure-symbol)
+         (symbol-value quit-on-failure-symbol))))
 
 (defun form-steps (form)
   (if (consp form)

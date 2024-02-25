@@ -5,6 +5,7 @@
         #:rove/core/suite/package)
   (:import-from #:rove/core/assertion
                 #:*debug-on-error*
+                #:*quit-on-failure*
                 #:failed-assertion)
   (:import-from #:dissect
                 #:stack)
@@ -37,6 +38,11 @@
                                                          :desc "Raise an error while testing."))
                                   (return nil))))
                  (funcall function)))))
+    (when (and *quit-on-failure*
+               (not (passedp (stats-context *stats*))))
+      (format t "Failed test, with the abort option enabled. ~%")
+      (abort))
+
     (test-finish *stats* desc)))
 
 (defmacro with-testing-with-options (desc (&key name) &body body)
