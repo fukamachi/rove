@@ -21,7 +21,7 @@
 (defun call-with-testing-with-options (desc name function)
   (test-begin *stats* desc)
   (unwind-protect
-       (with-context (context :name name :description desc)
+       (with-context (context :name (or name desc) :description desc)
          (if *debug-on-error*
              (funcall function)
              (block nil
