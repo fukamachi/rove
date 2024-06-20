@@ -67,9 +67,12 @@
   (:method ((reporter reporter) desc)
     (princ desc (reporter-stream reporter))))
 
-(defun diag (desc)
+(defun diag (desc &rest args)
   (when (typep *stats* 'reporter)
-    (print-message *stats* desc)))
+    (print-message *stats*
+                   (if args
+                       (apply #'format nil desc args)
+                       desc))))
 
 (defmacro with-reporter (reporter-style &body body)
   `(invoke-reporter (make-reporter ,reporter-style)
