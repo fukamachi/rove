@@ -19,9 +19,17 @@
         (return pathname))
       (unless asdf:*user-cache*
         (return pathname))
-      (if (eql (search (namestring asdf:*user-cache*)
-                       (namestring pathname))
-               0)
+      (if (or (eql (search (namestring asdf:*user-cache*)
+                           (namestring pathname))
+                   0)
+              #+sb-thread
+              (eql (search (namestring
+                            (merge-pathnames
+                             ;; UIOP may add -s postfix for multithreaded SBCL.
+                             (ppcre:regex-replace "-s$" (uiop/os:implementation-identifier) "")
+                             (uiop:pathname-parent-directory-pathname asdf:*user-cache*)))
+                           (namestring pathname))
+                   0))
           (let* ((directories (nthcdr (length (pathname-directory asdf:*user-cache*))
                                       (pathname-directory pathname)))
                  (device (pathname-device pathname))
