@@ -10,6 +10,11 @@
   (equal (pathname-type pathname)
          (uiop:compile-file-type)))
 
+(defun multithread-suffix-p (impl)
+  (and (stringp impl)
+       (<= 2 (length impl))
+       (string= impl "-s" :start1 (- (length impl) 2))))
+
 (defun resolve-file (pathname)
   (block nil
     (unless pathname
@@ -22,14 +27,16 @@
       (if (or (eql (search (namestring asdf:*user-cache*)
                            (namestring pathname))
                    0)
-              #+sb-thread
-              (eql (search (namestring
-                            (merge-pathnames
-                             ;; UIOP may add -s postfix for multithreaded SBCL.
-                             (ppcre:regex-replace "-s$" (uiop/os:implementation-identifier) "")
-                             (uiop:pathname-parent-directory-pathname asdf:*user-cache*)))
-                           (namestring pathname))
-                   0))
+              (let ((impl (uiop:implementation-identifier)))
+                (and (uiop:featurep :sb-thread)
+                     (multithread-suffix-p impl)
+                     (eql (search (namestring
+                                   (merge-pathnames
+                                    ;; UIOP may add -s suffix for multithreaded SBCL.
+                                    (subseq impl 0 (- (length impl) 2))
+                                    (uiop:pathname-parent-directory-pathname asdf:*user-cache*)))
+                                  (namestring pathname))
+                          0))))
           (let* ((directories (nthcdr (length (pathname-directory asdf:*user-cache*))
                                       (pathname-directory pathname)))
                  (device (pathname-device pathname))
