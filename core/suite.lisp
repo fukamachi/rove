@@ -75,7 +75,10 @@
                             *error-output*)))
     (initialize *stats*)
 
-    (funcall function)
+    (handler-case
+        (funcall function)
+      (quit-early ()
+        (format *error-output* "~&Failed test, with the abort option enabled. ~%")))
 
     (summarize *stats*)
 

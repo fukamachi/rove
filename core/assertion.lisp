@@ -17,7 +17,8 @@
            #:expands
            #:pass
            #:fail
-           #:skip))
+           #:skip
+           #:quit-early))
 (in-package #:rove/core/assertion)
 
 (defvar *debug-on-error*
@@ -29,6 +30,8 @@
   (let ((quit-on-failure-symbol (intern (string :*rove-quit-on-failure*) :cl-user)))
     (and (boundp quit-on-failure-symbol)
          (symbol-value quit-on-failure-symbol))))
+
+(define-condition quit-early () ())
 
 (defun form-steps (form)
   (if (consp form)

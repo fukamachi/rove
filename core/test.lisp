@@ -6,7 +6,8 @@
   (:import-from #:rove/core/assertion
                 #:*debug-on-error*
                 #:*quit-on-failure*
-                #:failed-assertion)
+                #:failed-assertion
+                #:quit-early)
   (:import-from #:dissect
                 #:stack)
   (:export #:deftest
@@ -38,12 +39,11 @@
                                                          :desc "Raise an error while testing."))
                                   (return nil))))
                  (funcall function)))))
+    (test-finish *stats* desc)
+
     (when (and *quit-on-failure*
                (not (passedp (stats-context *stats*))))
-      (format t "Failed test, with the abort option enabled. ~%")
-      (abort))
-
-    (test-finish *stats* desc)))
+      (error 'quit-early))))
 
 (defmacro with-testing-with-options (desc (&key name) &body body)
   `(call-with-testing-with-options ,desc ,name (lambda () ,@body)))
