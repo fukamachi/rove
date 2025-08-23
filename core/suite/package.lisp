@@ -16,6 +16,8 @@
                 #:initialize
                 #:summarize
                 #:toplevel-stats-p)
+  (:import-from #:rove/core/assertion
+                #:quit-early)
   (:export #:all-suites
            #:find-suite
            #:system-suites
@@ -137,19 +139,21 @@
     (when (toplevel-stats-p *stats*)
       (initialize *stats*))
     (suite-begin *stats* suite-name)
-    (with-context (context :name suite-name)
-      (unwind-protect
-          (progn
-            (when (suite-setup suite)
-              (funcall (suite-setup suite)))
-            (dolist (test (suite-tests suite))
-              (unwind-protect
-                  (progn
-                    (mapc #'run-hook (reverse (suite-before-hooks suite)))
-                    (funcall (get-test test)))
-                (mapc #'run-hook (reverse (suite-after-hooks suite))))))
-        (when (suite-teardown suite)
-          (funcall (suite-teardown suite)))))
+    (handler-case
+        (with-context (context :name suite-name)
+          (unwind-protect
+              (progn
+                (when (suite-setup suite)
+                  (funcall (suite-setup suite)))
+                (dolist (test (suite-tests suite))
+                  (unwind-protect
+                      (progn
+                        (mapc #'run-hook (reverse (suite-before-hooks suite)))
+                        (funcall (get-test test)))
+                    (mapc #'run-hook (reverse (suite-after-hooks suite))))))
+            (when (suite-teardown suite)
+              (funcall (suite-teardown suite)))))
+      (quit-early ()))
     (suite-finish *stats* suite-name)
     (when (toplevel-stats-p *stats*)
       (summarize *stats*))
