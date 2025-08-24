@@ -21,6 +21,7 @@
            #:run*
            #:run-test
            #:run-tests
+           #:run-suite
            #:with-local-envs
            #:*default-reporter*
            #:*default-env*
@@ -72,6 +73,11 @@
   (let ((tests (mapcar #'ensure-test test-names)))
     (with-reporter style
       (run-test-functions tests))))
+
+(defgeneric run-suite (suite &key style)
+  (:method (suite &key (style :spec))
+    (with-reporter style
+      (run-suite-tests suite))))
 
 (defmethod run (target &key (style *default-reporter*) (env *default-env*))
   (with-local-envs env

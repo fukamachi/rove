@@ -10,13 +10,13 @@
                 #:remove-test
                 #:system-suites
                 #:suite-name
-                #:run-suite
+                #:run-suite-tests
                 #:package-suite
                 #:all-suites
                 #:find-suite)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
-  (:export #:run-suite
+  (:export #:run-suite-tests
            #:run-system
            #:run-test-functions
            #:all-suites
@@ -55,15 +55,15 @@
               (dolist (package pkgs)
                 (let ((suite (package-suite package)))
                   (when suite
-                    (run-suite suite)))))
+                    (run-suite-tests suite)))))
 
             (when package
               (let ((suite (package-suite package)))
                 (when suite
-                  (run-suite suite))))))
+                  (run-suite-tests suite))))))
         (otherwise
           (dolist (suite (system-suites system))
-            (run-suite suite)))))
+            (run-suite-tests suite)))))
     (system-tests-finish *stats* system)))
 
 (defun call-with-suite (function)

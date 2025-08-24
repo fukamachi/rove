@@ -31,7 +31,7 @@
            #:suite-after-hooks
            #:suite-tests
            #:package-suite
-           #:run-suite))
+           #:run-suite-tests))
 (in-package #:rove/core/suite/package)
 
 (deftype string-designator () '(or character string symbol))
@@ -129,11 +129,11 @@
     (declare (ignore name))
     (funcall fn)))
 
-(defgeneric run-suite (suite)
+(defgeneric run-suite-tests (suite)
   (:method (suite)
-    (run-suite (package-suite suite))))
+    (run-suite-tests (package-suite suite))))
 
-(defmethod run-suite ((suite suite))
+(defmethod run-suite-tests ((suite suite))
   (let* ((suite-name (suite-name suite))
          (*package* (suite-package suite)))
     (when (toplevel-stats-p *stats*)
