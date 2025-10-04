@@ -15,5 +15,27 @@
         (actual (rove:run-test 'example-test)))
     (assert (equal expected actual))))
 
+(rove:deftest test-failing-with-all-failures
+  (rove:testing "failing block where all assertions fail (should pass)"
+    (rove:failing "TODO: implement feature X"
+      (rove:ok (= 1 0))
+      (rove:ok (char= #\a #\b)))))
+
+(rove:deftest test-failing-with-unexpected-success
+  (rove:testing "failing block where assertions pass (should fail)"
+    (rove:failing "This should fail but doesn't"
+      (rove:ok (= 1 1)))))
+
+(rove:deftest test-failing-with-mixed-results
+  (rove:testing "failing block with mixed results (should fail because some pass)"
+    (rove:failing "Mixed results"
+      (rove:ok (= 1 1))
+      (rove:ok (= 1 0)))))
+
+(rove:deftest test-failing-with-no-assertions
+  (rove:testing "failing block with no assertions (should fail)"
+    (rove:failing "Empty block"
+      nil)))
+
 (defun run-all-tests ()
   (testing-returns-the-body-result))

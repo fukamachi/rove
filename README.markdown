@@ -137,6 +137,24 @@ $ ros install rove
     (ok (= (length (list 1 2 3)) 3))))
 ```
 
+### failing (description &body body)
+
+Expects all assertions within the body to fail. If any assertion passes, the test fails and reports which assertions unexpectedly passed. This is useful for testing code that is known to be broken or not yet implemented.
+
+```common-lisp
+(deftest incomplete-feature
+  (failing "TODO: implement addition"
+    (ok (= (add 1 2) 3))
+    (ok (= (add 5 5) 10))))
+;-> ✓ Expect (= (ADD 1 2) 3) to be true.
+;-> ✓ Expect (= (ADD 5 5) 10) to be true.
+;
+; Summary shows:
+; 0) INCOMPLETE-FEATURE
+;      › TODO: implement addition
+;    Expected to fail: Expect (= (ADD 1 2) 3) to be true.
+```
+
 ### setup (&body body)
 
 Evaluates before testing the package once. This would be useful for initialization of tests, like establishment to the DB or creating a temporary directory.

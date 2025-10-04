@@ -32,28 +32,30 @@
 
 (defmethod record ((reporter spec-reporter) (object passed-assertion))
   (call-next-method)
-  (let ((stream (reporter-stream reporter)))
-    (fresh-line stream)
-    (princ (color-text :green "✓ ") stream)
-    (with-indent (stream +2)
-      (princ (color-text :gray (assertion-description object)) stream)
-      (print-duration (assertion-duration object) stream)
-      (fresh-line stream))))
+  (unless *suppress-assertion-printing*
+    (let ((stream (reporter-stream reporter)))
+      (fresh-line stream)
+      (princ (color-text :green "✓ ") stream)
+      (with-indent (stream +2)
+        (princ (color-text :gray (assertion-description object)) stream)
+        (print-duration (assertion-duration object) stream)
+        (fresh-line stream)))))
 
 (defmethod record ((reporter spec-reporter) (object failed-assertion))
   (call-next-method)
-  (let ((stream (reporter-stream reporter)))
-    (fresh-line stream)
-    (princ (color-text :red "× ") stream)
-    (with-indent (stream +2)
-      (princ
-       (color-text :red
-                   (format nil "~D) ~A"
-                           (1- (length (all-failed-assertions *stats*)))
-                           (assertion-description object)))
-       stream)
-      (print-duration (assertion-duration object) stream)
-      (fresh-line stream))))
+  (unless *suppress-assertion-printing*
+    (let ((stream (reporter-stream reporter)))
+      (fresh-line stream)
+      (princ (color-text :red "× ") stream)
+      (with-indent (stream +2)
+        (princ
+         (color-text :red
+                     (format nil "~D) ~A"
+                             (1- (length (all-failed-assertions *stats*)))
+                             (assertion-description object)))
+         stream)
+        (print-duration (assertion-duration object) stream)
+        (fresh-line stream)))))
 
 (defmethod record ((reporter spec-reporter) (object pending-assertion))
   (call-next-method)
