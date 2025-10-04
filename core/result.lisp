@@ -8,6 +8,7 @@
            #:form-description
 
            #:*print-assertion*
+           #:*suppress-assertion-printing*
            #:assertion
            #:assertion-form
            #:assertion-steps
@@ -37,6 +38,7 @@
 (in-package #:rove/core/result)
 
 (defvar *print-assertion* nil)
+(defvar *suppress-assertion-printing* nil)
 
 (defclass passed () ())
 (defclass failed () ())

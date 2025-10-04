@@ -8,10 +8,15 @@
                 #:*quit-on-failure*
                 #:failed-assertion
                 #:quit-early)
+  (:import-from #:rove/core/result
+                #:passed-assertion
+                #:assertion-description
+                #:*suppress-assertion-printing*)
   (:import-from #:dissect
                 #:stack)
   (:export #:deftest
            #:testing
+           #:failing
            #:setup
            #:teardown
            #:defhook
@@ -67,6 +72,36 @@
 
 (defmacro testing (desc &body body)
   `(with-testing-with-options ,desc () ,@body))
+
+(defmacro failing (desc &body body)
+  "Execute BODY expecting all assertions to fail. If any assertion passes,
+   the failing block itself is marked as failed."
+  (let ((context (gensym "CONTEXT"))
+        (unexpected-passes (gensym "UNEXPECTED-PASSES")))
+    `(progn
+       (test-begin *stats* ,desc)
+       (unwind-protect
+            (with-context (,context :name ,desc :description ,desc)
+              ,@body
+              ;; Collect unexpected passes
+              (let ((,unexpected-passes (coerce (stats-passed-tests ,context) 'list)))
+                ;; Clear the context stats - we'll handle reporting differently
+                (setf (slot-value ,context 'rove/core/stats::passed)
+                      (make-array 0 :adjustable t :fill-pointer 0))
+                (setf (slot-value ,context 'rove/core/stats::failed)
+                      (make-array 0 :adjustable t :fill-pointer 0))
+                ;; Change unexpected passes to failures and record them
+                (let ((*suppress-assertion-printing* t))
+                  (dolist (assertion ,unexpected-passes)
+                    ;; Change class from passed-assertion to failed-assertion
+                    (change-class assertion 'failed-assertion)
+                    ;; Update description
+                    (setf (slot-value assertion 'rove/core/result::desc)
+                          (format nil "Expected to fail: ~A"
+                                  (assertion-description assertion)))
+                    ;; Record in parent context as a failure
+                    (record *stats* assertion)))))
+         (test-finish *stats* ,desc)))))
 
 (defmacro setup (&body body)
   `(progn
