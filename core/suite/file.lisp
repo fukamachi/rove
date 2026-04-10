@@ -15,6 +15,14 @@
        (<= 2 (length impl))
        (string= impl "-s" :start1 (- (length impl) 2))))
 
+;; Rate-limit the ASDF probe error warning so a permanently broken
+;; ASDF configuration does not flood *error-output* with one warning
+;; per compiled file.  Reset on image restore so a corrected image
+;; produces the warning again if the probe subsequently fails.
+(defvar *translation-probe-warned* nil)
+(uiop:register-image-restore-hook
+  (lambda () (setf *translation-probe-warned* nil)) t)
+
 (defun effective-fasl-cache-root ()
   "Return the root directory under which ASDF stores compiled files
 according to the current output translation configuration.
@@ -41,9 +49,11 @@ translations may be reconfigured during an interactive session."
                          :name nil :type nil :version nil
                          :defaults translated)))
     (error (e)
-      (warn "effective-fasl-cache-root: ASDF output translation probe failed: ~A. ~
-             Falling back to asdf:*user-cache*."
-            e)
+      (unless *translation-probe-warned*
+        (setf *translation-probe-warned* t)
+        (warn "effective-fasl-cache-root: ASDF output translation probe failed: ~A. ~
+               Falling back to asdf:*user-cache*."
+              e))
       nil)))
 
 (defun resolve-file (pathname)
