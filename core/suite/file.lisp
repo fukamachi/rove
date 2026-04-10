@@ -15,36 +15,36 @@
        (<= 2 (length impl))
        (string= impl "-s" :start1 (- (length impl) 2))))
 
-;; Cached result of computing the ASDF output translation root.
-;; :not-computed means the value has not been determined yet.
-(defvar *effective-fasl-cache-root* :not-computed)
-
 (defun effective-fasl-cache-root ()
   "Return the root directory under which ASDF stores compiled files
 according to the current output translation configuration.
 When ASDF_OUTPUT_TRANSLATIONS points to a custom cache, this returns that
 custom root rather than the default asdf:*user-cache*.
-Returns nil if the translation appears to be an identity (no separate cache).
+Returns nil if the translation appears to be an identity (no separate cache)
+or if the ASDF probe signals an error.
 
 The probe pathname is intentionally one directory component deep so that
 butlast peeling exactly (length source-comps) components isolates the prefix.
-This assumes a single uniform translation rule applies to all source files."
-  (when (eq *effective-fasl-cache-root* :not-computed)
-    (setf *effective-fasl-cache-root*
-          (handler-case
-              (let* ((probe (make-pathname :directory '(:absolute "rove--fasl-probe")
-                                           :name "probe" :type "lisp"))
-                     (translated (asdf:apply-output-translations probe))
-                     (source-comps (cdr (pathname-directory probe)))
-                     (trans-comps (cdr (pathname-directory translated)))
-                     (cache-comps (butlast trans-comps (length source-comps))))
-                (when (and cache-comps (every #'stringp cache-comps))
-                  (make-pathname :directory (cons :absolute cache-comps)
-                                 :name nil :type nil :version nil
-                                 :defaults translated)))
-            (error ()
-              nil))))
-  *effective-fasl-cache-root*)
+This assumes a single uniform translation rule applies to all source files.
+
+Not memoized: called once per compiled file during load, and ASDF output
+translations may be reconfigured during an interactive session."
+  (handler-case
+      (let* ((probe (make-pathname :directory '(:absolute "rove--fasl-probe")
+                                   :name "probe" :type "lisp"))
+             (translated (asdf:apply-output-translations probe))
+             (source-comps (cdr (pathname-directory probe)))
+             (trans-comps (cdr (pathname-directory translated)))
+             (cache-comps (butlast trans-comps (length source-comps))))
+        (when (and cache-comps (every #'stringp cache-comps))
+          (make-pathname :directory (cons :absolute cache-comps)
+                         :name nil :type nil :version nil
+                         :defaults translated)))
+    (error (e)
+      (warn "effective-fasl-cache-root: ASDF output translation probe failed: ~A. ~
+             Falling back to asdf:*user-cache*."
+            e)
+      nil)))
 
 (defun resolve-file (pathname)
   (block nil
