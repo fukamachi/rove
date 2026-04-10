@@ -102,11 +102,15 @@ translations may be reconfigured during an interactive session."
                      :directory (cons :absolute directories))
                     (uiop:lispize-pathname pathname)))
               (progn
-                (warn "resolve-file: could not map FASL ~A back to its source file. ~
-                       ASDF_OUTPUT_TRANSLATIONS may point to a location that rove's ~
-                       cache-root probe did not detect.  Run with a uniform single-rule ~
-                       output translation or ensure *user-cache* is set."
-                      pathname)
+                ;; Rate-limit: warn once per session so a misconfigured
+                ;; translation does not flood output with one message per file.
+                (unless *translation-probe-warned*
+                  (setf *translation-probe-warned* t)
+                  (warn "resolve-file: could not map FASL ~A back to its source file. ~
+                         ASDF_OUTPUT_TRANSLATIONS may point to a location that rove's ~
+                         cache-root probe did not detect.  Run with a uniform single-rule ~
+                         output translation or ensure *user-cache* is set."
+                        pathname))
                 (uiop:lispize-pathname pathname))))))))
 
 
