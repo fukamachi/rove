@@ -13,7 +13,9 @@
                 #:run-suite-tests
                 #:package-suite
                 #:all-suites
-                #:find-suite)
+                #:find-suite
+                #:*before-test-hooks*
+                #:*after-test-hooks*)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
   (:export #:run-suite-tests
@@ -24,6 +26,8 @@
            #:*last-suite-report*
            #:*rove-standard-output*
            #:*rove-error-output*
+           #:*before-test-hooks*
+           #:*after-test-hooks*
            #:get-test
            #:remove-test))
 (in-package #:rove/core/suite)

@@ -31,7 +31,9 @@
            #:suite-after-hooks
            #:suite-tests
            #:package-suite
-           #:run-suite-tests))
+           #:run-suite-tests
+           #:*before-test-hooks*
+           #:*after-test-hooks*))
 (in-package #:rove/core/suite/package)
 
 (deftype string-designator () '(or character string symbol))
@@ -39,6 +41,17 @@
 
 (defvar *package-suites*
   (make-hash-table :test 'eq))
+
+(defvar *before-test-hooks* nil
+  "A list of functions of no arguments, each called before every test in every
+suite, in addition to per-suite DEFHOOK :before hooks. Intended for global
+per-test setup, e.g. quiescing background threads between tests.")
+
+(defvar *after-test-hooks* nil
+  "A list of functions of no arguments, each called after every test in every
+suite, in addition to per-suite DEFHOOK :after hooks. Each runs in the per-test
+UNWIND-PROTECT cleanup, so they execute even when the test errors. Intended for
+global per-test cleanup, e.g. quiescing background threads between tests.")
 
 (defun all-suites ()
   (loop for suite being the hash-value of *package-suites*
@@ -148,9 +161,11 @@
                 (dolist (test (suite-tests suite))
                   (unwind-protect
                       (progn
+                        (mapc #'funcall (reverse *before-test-hooks*))
                         (mapc #'run-hook (reverse (suite-before-hooks suite)))
                         (funcall (get-test test)))
-                    (mapc #'run-hook (reverse (suite-after-hooks suite))))))
+                    (mapc #'run-hook (reverse (suite-after-hooks suite)))
+                    (mapc #'funcall (reverse *after-test-hooks*)))))
             (when (suite-teardown suite)
               (funcall (suite-teardown suite)))))
       (quit-early ()))
