@@ -39,7 +39,4 @@
 
 (defun run-all-tests ()
   (testing-returns-the-body-result)
-  ;; Parametrize suite (rove/tests/parametrize)
-  (unless (rove:run :rove/tests/parametrize)
-    (error "parametrize tests failed"))
-  t)
+  (assert (rove:run :rove/tests/parametrize)))
