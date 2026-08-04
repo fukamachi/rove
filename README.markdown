@@ -126,6 +126,33 @@ $ ros install rove
   (ok (= (length #(1 2 3)) 3)))
 ```
 
+### deftest-parametrize (name bindings &body body)
+
+Data-driven tests (pytest `mark.parametrize` / JUnit parameterized). Expands to one `deftest` per row; names are `NAME/0`, `NAME/1`, … or `NAME/<id>` when `:ids` is given.
+
+```common-lisp
+(deftest-parametrize add
+    ((a b expected)
+     (1 2 3)
+     (0 0 0)
+     (-1 1 0))
+  (ok (= (+ a b) expected)))
+
+(deftest-parametrize doubles
+    ((n expected) :ids ("two" "four")
+     (1 2)
+     (2 4))
+  (ok (= (* n 2) expected))) ; names: DOUBLES/TWO, DOUBLES/FOUR
+
+;; Dynamic table (evaluated at load time):
+(defparameter *cases* '((1 2 3) (4 5 9)))
+(deftest-parametrize add-dyn
+    ((a b expected) :rows *cases*)
+  (ok (= (+ a b) expected)))
+```
+
+Helper: `parametrize-test-name` builds the per-row symbol.
+
 ### testing (description &body body)
 
 ```common-lisp
