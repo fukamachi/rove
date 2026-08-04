@@ -3,6 +3,7 @@
   (:use #:cl)
   (:use-reexport #:rove/core/assertion)
   (:use-reexport #:rove/core/test)
+  (:use-reexport #:rove/core/parametrize)
   (:use-reexport #:rove/core/suite)
   (:use-reexport #:rove/core/result)
   (:use-reexport #:rove/reporter)

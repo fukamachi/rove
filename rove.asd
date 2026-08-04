@@ -10,5 +10,6 @@
 (defsystem "rove/tests"
   :class :package-inferred-system
   :depends-on ("rove"
-               "rove/tests/main")
+               "rove/tests/main"
+               "rove/tests/parametrize")
   :perform (test-op (o c) (symbol-call :rove/tests/main :run-all-tests)))
