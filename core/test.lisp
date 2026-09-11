@@ -14,16 +14,44 @@
                 #:*suppress-assertion-printing*)
   (:import-from #:dissect
                 #:stack)
+  (:import-from #:rove/core/marks
+                #:set-test-marks)
+  (:import-from #:bordeaux-threads)
   (:export #:deftest
            #:testing
            #:failing
            #:setup
            #:teardown
            #:defhook
-           #:*default-test-compilation-time*))
+           #:*default-test-compilation-time*
+           #:*default-test-timeout*
+           #:test-timeout
+           #:set-test-timeout))
 (in-package #:rove/core/test)
 
 (defvar *default-test-compilation-time* :definition-time)
+(defvar *default-test-timeout* nil
+  "Default per-test timeout in seconds. NIL means no timeout.")
+
+(defun test-timeout (name)
+  (or (get name 'rove-timeout) *default-test-timeout*))
+
+(defun set-test-timeout (name seconds)
+  (setf (get name 'rove-timeout) seconds))
+
+(defun call-with-test-timeout (seconds thunk)
+  (if (and seconds (numberp seconds) (plusp seconds))
+      (handler-case
+          (bt2:with-timeout (seconds)
+            (funcall thunk))
+        (bt2:timeout ()
+          (record *stats*
+                  (make-instance 'failed-assertion
+                                 :form `(timeout ,seconds)
+                                 :desc (format nil "Test exceeded timeout of ~A second~:P"
+                                               seconds)))
+          nil))
+      (funcall thunk)))
 
 (defun call-with-testing-with-options (desc name function)
   (test-begin *stats* desc)
@@ -54,21 +82,32 @@
   `(call-with-testing-with-options ,desc ,name (lambda () ,@body)))
 
 (defmacro deftest (name-and-options &body body)
-  (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
+  (destructuring-bind (name &key (compile-at *default-test-compilation-time*)
+                                 marks
+                                 timeout)
       (if (consp name-and-options)
           name-and-options
           (list name-and-options))
     (check-type compile-at (member :run-time :definition-time))
     (let ((test-name (let ((*print-case* :downcase))
                        (princ-to-string name))))
-      `(set-test ',name
-                 ,(if (eq compile-at :run-time)
-                    `(lambda ()
-                       (funcall (compile nil '(lambda ()
-                                                (with-testing-with-options ,test-name (:name ',name)
-                                                  ,@body)))))
-                    `(lambda ()
-                       (with-testing-with-options ,test-name (:name ',name) ,@body)))))))
+      `(progn
+         ,@(when marks
+             `((set-test-marks ',name ',marks)))
+         ,@(when timeout
+             `((set-test-timeout ',name ,timeout)))
+         (set-test ',name
+                   ,(if (eq compile-at :run-time)
+                      `(lambda ()
+                         (call-with-test-timeout (test-timeout ',name)
+                           (lambda ()
+                             (funcall (compile nil '(lambda ()
+                                                      (with-testing-with-options ,test-name (:name ',name)
+                                                        ,@body)))))))
+                      `(lambda ()
+                         (call-with-test-timeout (test-timeout ',name)
+                           (lambda ()
+                             (with-testing-with-options ,test-name (:name ',name) ,@body))))))))))
 
 (defmacro testing (desc &body body)
   `(with-testing-with-options ,desc () ,@body))
