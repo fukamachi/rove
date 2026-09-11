@@ -196,6 +196,25 @@ Evaluates before/after running a each test in the package.
   ...)
 ```
 
+### deffixture (name (&key scope) &body body)
+
+Define a fixture. Call `yield` with the value; forms after `yield` run as teardown.
+
+```common-lisp
+(deffixture tmp-dir ()
+  (let ((dir (ensure-directories-exist *tmp-directory*)))
+    (yield dir)
+    (uiop:delete-directory-tree dir :validate t :if-does-not-exist :ignore)))
+
+(deftest writes-file
+  (with-fixture (dir tmp-dir)
+    (ok (probe-file dir))))
+```
+
+`:scope` is `:test` (default — setup/teardown each `with-fixture`), `:suite` (once per package suite), or `:session` (once per `run`). `:suite` / `:session` cache the yielded value and skip teardown after `yield` — use `teardown` / `defhook` for that cleanup.
+
+`with-fixtures` nests several bindings: `(with-fixtures ((a foo) (b bar)) ...)`.
+
 ### run (package &key style env marks shard shards junit-file)
 
 ```common-lisp

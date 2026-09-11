@@ -18,6 +18,8 @@
                 #:*after-test-hooks*
                 #:*shard*
                 #:*shard-count*)
+  (:import-from #:rove/core/fixture
+                #:clear-fixture-caches)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
   (:export #:run-suite-tests
@@ -81,6 +83,7 @@
                                *standard-output*))
         (*error-output* (or *rove-error-output*
                             *error-output*)))
+    (clear-fixture-caches :suite t :session t)
     (initialize *stats*)
 
     (handler-case
