@@ -18,7 +18,12 @@
                 #:toplevel-stats-p)
   (:import-from #:rove/core/assertion
                 #:quit-early)
+  (:import-from #:rove/core/marks
+                #:*mark-expr*
+                #:test-selected-by-marks-p)
   (:export #:all-suites
+           #:*shard*
+           #:*shard-count*
            #:find-suite
            #:system-suites
            #:get-test
@@ -30,6 +35,7 @@
            #:suite-before-hooks
            #:suite-after-hooks
            #:suite-tests
+           #:selected-suite-tests
            #:package-suite
            #:run-suite-tests
            #:*before-test-hooks*
@@ -52,6 +58,9 @@ per-test setup, e.g. quiescing background threads between tests.")
 suite, in addition to per-suite DEFHOOK :after hooks. Each runs in the per-test
 UNWIND-PROTECT cleanup, so they execute even when the test errors. Intended for
 global per-test cleanup, e.g. quiescing background threads between tests.")
+
+(defvar *shard* nil)
+(defvar *shard-count* nil)
 
 (defun all-suites ()
   (loop for suite being the hash-value of *package-suites*
@@ -142,6 +151,19 @@ global per-test cleanup, e.g. quiescing background threads between tests.")
     (declare (ignore name))
     (funcall fn)))
 
+(defun selected-suite-tests (suite)
+  (let ((tests (suite-tests suite)))
+    (when *mark-expr*
+      (setf tests (remove-if-not #'test-selected-by-marks-p tests)))
+    (when (and *shard-count* (integerp *shard-count*) (> *shard-count* 1))
+      (let ((shard (or *shard* 0)))
+        (setf tests
+              (loop for test in tests
+                    for i from 0
+                    when (= (mod i *shard-count*) shard)
+                      collect test))))
+    tests))
+
 (defgeneric run-suite-tests (suite)
   (:method (suite)
     (run-suite-tests (package-suite suite))))
@@ -158,7 +180,7 @@ global per-test cleanup, e.g. quiescing background threads between tests.")
               (progn
                 (when (suite-setup suite)
                   (funcall (suite-setup suite)))
-                (dolist (test (suite-tests suite))
+                (dolist (test (selected-suite-tests suite))
                   (unwind-protect
                       (progn
                         (mapc #'funcall (reverse *before-test-hooks*))
