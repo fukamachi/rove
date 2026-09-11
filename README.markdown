@@ -62,6 +62,8 @@ $ ros install rove
 ;-> × 0) Expect (= A 0) to be true.
 ```
 
+Failed `equal` / `equalp` / `string=` / `string-equal` / `eql` / `=` assertions also print expected vs actual.
+
 ### ng (form &optional description)
 
 ```common-lisp
@@ -124,7 +126,15 @@ $ ros install rove
 ```common-lisp
 (deftest testing-length
   (ok (= (length #(1 2 3)) 3)))
+
+;; Optional marks and per-test timeout (seconds):
+(deftest (slow-query :marks (:slow :db) :timeout 5)
+  (ok (query)))
 ```
+
+`:marks` is a keyword or list of keywords stored on the test. `run` `:marks` keeps tests whose marks satisfy a keyword, or `(and …)` / `(or …)` / `(not …)`.
+
+`:timeout` records a failed assertion when the test exceeds that many seconds. `*default-test-timeout*` sets a global default (`nil` = no timeout).
 
 ### testing (description &body body)
 
@@ -186,15 +196,39 @@ Evaluates before/after running a each test in the package.
   ...)
 ```
 
-### run (package &key style env)
+### deffixture (name (&key scope) &body body)
+
+Define a fixture. Call `yield` with the value; forms after `yield` run as teardown.
+
+```common-lisp
+(deffixture tmp-dir ()
+  (let ((dir (ensure-directories-exist *tmp-directory*)))
+    (yield dir)
+    (uiop:delete-directory-tree dir :validate t :if-does-not-exist :ignore)))
+
+(deftest writes-file
+  (with-fixture (dir tmp-dir)
+    (ok (probe-file dir))))
+```
+
+`:scope` is `:test` (default — setup/teardown each `with-fixture`), `:suite` (once per package suite), or `:session` (once per `run`). `:suite` / `:session` cache the yielded value and skip teardown after `yield` — use `teardown` / `defhook` for that cleanup.
+
+`with-fixtures` nests several bindings: `(with-fixtures ((a foo) (b bar)) ...)`.
+
+### run (package &key style env marks shard shards junit-file)
 
 ```common-lisp
 (run :myapp/tests)                              ; Defaults to spec-style output.
 (run :myapp/tests :style :spec)                 ; Detailed test output.
 (run :myapp/tests :style :dot)                  ; One-dot-per-test output.
 (run :myapp/tests :style :none)                 ; Minimal test output with filenames only.
+(run :myapp/tests :style :junit :junit-file #p"report.xml")
+(run :myapp/tests :marks '(not :slow))
+(run :myapp/tests :shard 0 :shards 4)
 (run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
+
+`:shard` / `:shards` split the selected tests by index for CI (0-based shard).
 
 ### run* (package-pattern &key style env)
 
