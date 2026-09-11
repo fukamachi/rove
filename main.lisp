@@ -20,6 +20,7 @@
   (:import-from #:rove/reporter/spec
                 #:spec-reporter)
   (:import-from #:rove/reporter/dot)
+  (:import-from #:rove/reporter/junit)
   (:import-from #:uiop)
   (:import-from #:cl-ppcre)
   (:export #:run
@@ -32,7 +33,8 @@
            #:*default-env*
 
            #:plan
-           #:*enable-colors*))
+           #:*enable-colors*
+           #:*junit-output-file*))
 (in-package #:rove/main)
 
 (defvar *default-env* '())
@@ -57,7 +59,7 @@
 (defgeneric run-test (test-name &key style)
   (:documentation "Run a single test function."))
 
-(defgeneric run (target &key style env marks shard shards)
+(defgeneric run (target &key style env marks shard shards junit-file)
   (:documentation "Run a test package."))
 
 (defun ensure-test (test-name)
@@ -85,10 +87,11 @@
       (run-suite-tests suite))))
 
 (defmethod run (target &key (style *default-reporter*) (env *default-env*)
-                            marks shard shards)
+                            marks shard shards junit-file)
   (let ((*mark-expr* marks)
         (*shard* shard)
-        (*shard-count* shards))
+        (*shard-count* shards)
+        (*junit-output-file* junit-file))
     (with-local-envs env
       (with-reporter style
         (run-system-tests target)))))
@@ -108,8 +111,8 @@
       (and (ppcre:scan re value)
            t))))
 
-(defun run* (target-pattern &rest args &key style env marks shard shards)
-  (declare (ignore style env marks shard shards))
+(defun run* (target-pattern &rest args &key style env marks shard shards junit-file)
+  (declare (ignore style env marks shard shards junit-file))
   (let ((target-pattern (etypecase target-pattern
                           (string target-pattern)
                           (symbol (let ((*print-case* :downcase))

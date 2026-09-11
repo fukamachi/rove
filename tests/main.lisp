@@ -39,4 +39,5 @@
 
 (defun run-all-tests ()
   (testing-returns-the-body-result)
-  (assert (rove:run :rove/tests/marks)))
+  (assert (rove:run :rove/tests/marks))
+  (assert (rove:run :rove/tests/report)))

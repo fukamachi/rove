@@ -11,5 +11,6 @@
   :class :package-inferred-system
   :depends-on ("rove"
                "rove/tests/main"
-               "rove/tests/marks")
+               "rove/tests/marks"
+               "rove/tests/report")
   :perform (test-op (o c) (symbol-call :rove/tests/main :run-all-tests)))

@@ -62,6 +62,8 @@ $ ros install rove
 ;-> × 0) Expect (= A 0) to be true.
 ```
 
+Failed `equal` / `equalp` / `string=` / `string-equal` / `eql` / `=` assertions also print expected vs actual.
+
 ### ng (form &optional description)
 
 ```common-lisp
@@ -194,13 +196,14 @@ Evaluates before/after running a each test in the package.
   ...)
 ```
 
-### run (package &key style env marks shard shards)
+### run (package &key style env marks shard shards junit-file)
 
 ```common-lisp
 (run :myapp/tests)                              ; Defaults to spec-style output.
 (run :myapp/tests :style :spec)                 ; Detailed test output.
 (run :myapp/tests :style :dot)                  ; One-dot-per-test output.
 (run :myapp/tests :style :none)                 ; Minimal test output with filenames only.
+(run :myapp/tests :style :junit :junit-file #p"report.xml")
 (run :myapp/tests :marks '(not :slow))
 (run :myapp/tests :shard 0 :shards 4)
 (run :myapp/tests :env '(("APP_ENV" . "test")))
