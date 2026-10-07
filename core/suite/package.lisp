@@ -18,7 +18,12 @@
                 #:toplevel-stats-p)
   (:import-from #:rove/core/assertion
                 #:quit-early)
+  (:import-from #:rove/core/marks
+                #:*mark-expr*
+                #:test-selected-by-marks-p)
   (:export #:all-suites
+           #:*shard*
+           #:*shard-count*
            #:find-suite
            #:system-suites
            #:get-test
@@ -30,6 +35,9 @@
            #:suite-before-hooks
            #:suite-after-hooks
            #:suite-tests
+           #:selected-suite-tests
+           #:check-shard
+           #:test-shard
            #:package-suite
            #:run-suite-tests
            #:*before-test-hooks*
@@ -52,6 +60,9 @@ per-test setup, e.g. quiescing background threads between tests.")
 suite, in addition to per-suite DEFHOOK :after hooks. Each runs in the per-test
 UNWIND-PROTECT cleanup, so they execute even when the test errors. Intended for
 global per-test cleanup, e.g. quiescing background threads between tests.")
+
+(defvar *shard* nil)
+(defvar *shard-count* nil)
 
 (defun all-suites ()
   (loop for suite being the hash-value of *package-suites*
@@ -142,34 +153,67 @@ global per-test cleanup, e.g. quiescing background threads between tests.")
     (declare (ignore name))
     (funcall fn)))
 
+(defun check-shard (shard shards)
+  (when (or shard shards)
+    (unless (and (integerp shard) (integerp shards) (<= 0 shard) (< shard shards))
+      (error "Invalid shard: :shard ~S :shards ~S (expected integers with 0 <= shard < shards)"
+             shard shards))))
+
+(defun test-shard (name shards)
+  "FNV-1a of the qualified test name modulo SHARDS, so the split doesn't depend on suite or definition order."
+  (let ((hash 2166136261))
+    (flet ((mix (string)
+             (loop for char across string
+                   do (setf hash (logand (* (logxor hash (char-code char)) 16777619)
+                                         #xFFFFFFFF)))))
+      (let ((package (symbol-package name)))
+        (when package
+          (mix (package-name package))))
+      (mix "::")
+      (mix (symbol-name name)))
+    (mod hash shards)))
+
+(defun selected-suite-tests (suite)
+  (let ((tests (suite-tests suite)))
+    (when *mark-expr*
+      (setf tests (remove-if-not #'test-selected-by-marks-p tests)))
+    (when *shard-count*
+      (check-shard *shard* *shard-count*)
+      (setf tests (remove-if-not (lambda (test)
+                                   (= (test-shard test *shard-count*) *shard*))
+                                 tests)))
+    tests))
+
 (defgeneric run-suite-tests (suite)
   (:method (suite)
     (run-suite-tests (package-suite suite))))
 
 (defmethod run-suite-tests ((suite suite))
   (let* ((suite-name (suite-name suite))
-         (*package* (suite-package suite)))
+         (*package* (suite-package suite))
+         (tests (selected-suite-tests suite)))
     (when (toplevel-stats-p *stats*)
       (initialize *stats*))
-    (suite-begin *stats* suite-name)
-    (handler-case
-        (with-context (context :name suite-name)
-          (unwind-protect
-              (progn
-                (when (suite-setup suite)
-                  (funcall (suite-setup suite)))
-                (dolist (test (suite-tests suite))
-                  (unwind-protect
-                      (progn
-                        (mapc #'funcall (reverse *before-test-hooks*))
-                        (mapc #'run-hook (reverse (suite-before-hooks suite)))
-                        (funcall (get-test test)))
-                    (mapc #'run-hook (reverse (suite-after-hooks suite)))
-                    (mapc #'funcall (reverse *after-test-hooks*)))))
-            (when (suite-teardown suite)
-              (funcall (suite-teardown suite)))))
-      (quit-early ()))
-    (suite-finish *stats* suite-name)
+    (unless (and (null tests) (or *mark-expr* *shard-count*))
+      (suite-begin *stats* suite-name)
+      (handler-case
+          (with-context (context :name suite-name)
+            (unwind-protect
+                 (progn
+                   (when (suite-setup suite)
+                     (funcall (suite-setup suite)))
+                   (dolist (test tests)
+                     (unwind-protect
+                         (progn
+                           (mapc #'funcall (reverse *before-test-hooks*))
+                           (mapc #'run-hook (reverse (suite-before-hooks suite)))
+                           (funcall (get-test test)))
+                       (mapc #'run-hook (reverse (suite-after-hooks suite)))
+                       (mapc #'funcall (reverse *after-test-hooks*)))))
+              (when (suite-teardown suite)
+                (funcall (suite-teardown suite)))))
+        (quit-early ()))
+      (suite-finish *stats* suite-name))
     (when (toplevel-stats-p *stats*)
       (summarize *stats*))
     (values (passedp *stats*)

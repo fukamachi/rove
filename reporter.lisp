@@ -30,18 +30,21 @@
 
 (defmethod passed-tests ((reporter reporter))
   (if (and *single-test-summarize-preference*
+           (stats-results reporter)
            (null (rest (stats-results reporter))))
       (passed-tests (first (stats-results reporter)))
       (call-next-method)))
 
 (defmethod failed-tests ((reporter reporter))
   (if (and *single-test-summarize-preference*
+           (stats-results reporter)
            (null (rest (stats-results reporter))))
       (failed-tests (first (stats-results reporter)))
       (call-next-method)))
 
 (defmethod pending-tests ((reporter reporter))
   (if (and *single-test-summarize-preference*
+           (stats-results reporter)
            (null (rest (stats-results reporter))))
       (pending-tests (first (stats-results reporter)))
       (call-next-method)))

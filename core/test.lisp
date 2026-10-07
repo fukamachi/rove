@@ -14,23 +14,55 @@
                 #:*suppress-assertion-printing*)
   (:import-from #:dissect
                 #:stack)
+  (:import-from #:rove/core/marks
+                #:set-test-marks)
+  (:import-from #:bordeaux-threads)
   (:export #:deftest
            #:testing
            #:failing
            #:setup
            #:teardown
            #:defhook
-           #:*default-test-compilation-time*))
+           #:*default-test-compilation-time*
+           #:*default-test-timeout*))
 (in-package #:rove/core/test)
 
 (defvar *default-test-compilation-time* :definition-time)
 
-(defun call-with-testing-with-options (desc name function)
+(deftype timeout-seconds () '(or null (real (0))))
+(declaim (type timeout-seconds *default-test-timeout*))
+(defvar *default-test-timeout* nil
+  "Default per-test timeout in seconds. NIL means no timeout.")
+
+(defun test-timeout (name)
+  (or (get name 'rove-timeout) *default-test-timeout*))
+
+(defun set-test-timeout (name seconds)
+  (check-type seconds timeout-seconds)
+  (setf (get name 'rove-timeout) seconds))
+
+(defun call-with-test-timeout (seconds thunk)
+  (if seconds
+      (handler-case
+          (bt2:with-timeout (seconds)
+            (funcall thunk))
+        (bt2:timeout ()
+          (record *stats*
+                  (make-instance 'failed-assertion
+                                 :form `(timeout ,seconds)
+                                 :labels (and *stats*
+                                              (stats-context-labels *stats*))
+                                 :desc (format nil "Test exceeded timeout of ~A second~:P"
+                                               seconds)))
+          nil))
+      (funcall thunk)))
+
+(defun call-with-testing-with-options (desc name function &optional timeout)
   (test-begin *stats* desc)
   (unwind-protect
        (with-context (context :name (or name desc) :description desc)
          (if *debug-on-error*
-             (funcall function)
+             (call-with-test-timeout timeout function)
              (block nil
                (handler-bind ((error
                                 (lambda (e)
@@ -43,32 +75,40 @@
                                                                       (stats-context-labels *stats*))
                                                          :desc "Raise an error while testing."))
                                   (return nil))))
-                 (funcall function)))))
+                 (call-with-test-timeout timeout function)))))
     (test-finish *stats* desc)
 
     (when (and *quit-on-failure*
                (not (passedp (stats-context *stats*))))
       (error 'quit-early))))
 
-(defmacro with-testing-with-options (desc (&key name) &body body)
-  `(call-with-testing-with-options ,desc ,name (lambda () ,@body)))
+(defmacro with-testing-with-options (desc (&key name timeout) &body body)
+  `(call-with-testing-with-options ,desc ,name (lambda () ,@body) ,timeout))
 
 (defmacro deftest (name-and-options &body body)
-  (destructuring-bind (name &key (compile-at *default-test-compilation-time*))
+  (destructuring-bind (name &key (compile-at *default-test-compilation-time*)
+                                 marks
+                                 timeout)
       (if (consp name-and-options)
           name-and-options
           (list name-and-options))
     (check-type compile-at (member :run-time :definition-time))
     (let ((test-name (let ((*print-case* :downcase))
                        (princ-to-string name))))
-      `(set-test ',name
-                 ,(if (eq compile-at :run-time)
-                    `(lambda ()
-                       (funcall (compile nil '(lambda ()
-                                                (with-testing-with-options ,test-name (:name ',name)
-                                                  ,@body)))))
-                    `(lambda ()
-                       (with-testing-with-options ,test-name (:name ',name) ,@body)))))))
+      `(progn
+         (set-test-marks ',name ',marks)
+         (set-test-timeout ',name ,timeout)
+         (set-test ',name
+                   ,(if (eq compile-at :run-time)
+                      `(lambda ()
+                         (funcall (compile nil '(lambda ()
+                                                  (with-testing-with-options ,test-name
+                                                      (:name ',name :timeout (test-timeout ',name))
+                                                    ,@body)))))
+                      `(lambda ()
+                         (with-testing-with-options ,test-name
+                             (:name ',name :timeout (test-timeout ',name))
+                           ,@body))))))))
 
 (defmacro testing (desc &body body)
   `(with-testing-with-options ,desc () ,@body))
