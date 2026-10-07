@@ -132,7 +132,7 @@ $ ros install rove
 
 `:marks` is a keyword or list of keywords stored on the test. `run` `:marks` keeps tests whose marks satisfy a keyword, or `(and …)` / `(or …)` / `(not …)`.
 
-`:timeout` records a failed assertion when the test exceeds that many seconds. `*default-test-timeout*` sets a global default (`nil` = no timeout).
+`:timeout` records a failed assertion when the test body exceeds that many seconds. `*default-test-timeout*` sets a global default (`nil` = no timeout). It is meant for detecting hangs: the body is interrupted asynchronously, so state after a timeout (e.g. an unfinished `unwind-protect` cleanup) isn't guaranteed to be clean.
 
 ### testing (description &body body)
 
@@ -206,7 +206,7 @@ Evaluates before/after running a each test in the package.
 (run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
 
-`:shard` / `:shards` split the selected tests by index for CI (0-based shard).
+`:shard` / `:shards` split the selected tests across CI jobs. Each test is assigned to a shard by a hash of its name, so the split is stable across runs and balanced across suites. `shard` must be an integer with `0 <= shard < shards` (convert 1-based CI indices yourself). Suites with no selected tests are skipped entirely, including `setup` / `teardown`.
 
 ### run* (package-pattern &key style env)
 

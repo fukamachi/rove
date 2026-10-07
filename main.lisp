@@ -5,14 +5,16 @@
   (:use-reexport #:rove/core/test)
   (:use-reexport #:rove/core/suite)
   (:use-reexport #:rove/core/result)
-  (:use-reexport #:rove/core/marks)
   (:use-reexport #:rove/reporter)
   (:import-from #:rove/core/suite
-                #:run-system-tests
+                #:run-system-tests)
+  (:import-from #:rove/core/suite/package
                 #:*shard*
-                #:*shard-count*)
+                #:*shard-count*
+                #:check-shard)
   (:import-from #:rove/core/marks
-                #:*mark-expr*)
+                #:*mark-expr*
+                #:normalize-mark-expr)
   (:import-from #:rove/core/stats
                 #:plan)
   (:import-from #:rove/misc/color
@@ -86,7 +88,8 @@
 
 (defmethod run (target &key (style *default-reporter*) (env *default-env*)
                             marks shard shards)
-  (let ((*mark-expr* marks)
+  (check-shard shard shards)
+  (let ((*mark-expr* (and marks (normalize-mark-expr marks)))
         (*shard* shard)
         (*shard-count* shards))
     (with-local-envs env

@@ -3,6 +3,7 @@
   (:use #:cl)
   (:export #:*mark-expr*
            #:normalize-mark
+           #:normalize-mark-expr
            #:test-marks
            #:set-test-marks
            #:eval-mark-expr
@@ -16,7 +17,7 @@
 (defun normalize-mark (mark)
   (cond
     ((keywordp mark) mark)
-    ((symbolp mark) (intern (symbol-name mark) :keyword))
+    ((and mark (symbolp mark)) (intern (symbol-name mark) :keyword))
     ((stringp mark) (intern (string-upcase mark) :keyword))
     (t (error "Invalid test mark: ~S" mark))))
 
@@ -30,29 +31,37 @@
         (mapcar #'normalize-mark (if (listp marks) marks (list marks))))
   (test-marks name))
 
+(defun normalize-mark-expr (expr)
+  "Validate EXPR and return it with marks as keywords and operators as AND / OR / NOT.
+   NIL and T both mean \"select every test\"."
+  (labels ((walk (expr)
+             (cond
+               ((or (symbolp expr) (stringp expr))
+                (normalize-mark expr))
+               ((and (consp expr) (symbolp (first expr)) (first expr))
+                (let ((op (find (first expr) '(and or not) :test #'string=))
+                      (args (rest expr)))
+                  (unless (and op args (or (not (eq op 'not)) (null (rest args))))
+                    (error "Invalid mark expression: ~S" expr))
+                  (cons op (mapcar #'walk args))))
+               (t
+                (error "Invalid mark expression: ~S" expr)))))
+    (if (member expr '(nil t))
+        t
+        (walk expr))))
+
 (defun eval-mark-expr (expr marks)
-  (cond
-    ((null expr) t)
-    ((eq expr t) t)
-    ((keywordp expr)
-     (not (null (member expr marks :test #'eq))))
-    ((symbolp expr)
-     (eval-mark-expr (normalize-mark expr) marks))
-    ((stringp expr)
-     (eval-mark-expr (normalize-mark expr) marks))
-    ((consp expr)
-     (let ((op (first expr)))
-       (cond
-         ((member op '(or :or) :test #'eq)
-          (some (lambda (e) (eval-mark-expr e marks)) (rest expr)))
-         ((member op '(and :and) :test #'eq)
-          (every (lambda (e) (eval-mark-expr e marks)) (rest expr)))
-         ((member op '(not :not) :test #'eq)
-          (not (eval-mark-expr (second expr) marks)))
-         (t
-          (error "Invalid mark expression: ~S" expr)))))
-    (t
-     (error "Invalid mark expression: ~S" expr))))
+  (let ((expr (normalize-mark-expr expr)))
+    (labels ((eval-expr (expr)
+               (cond
+                 ((eq expr t) t)
+                 ((keywordp expr) (and (member expr marks :test #'eq) t))
+                 (t
+                  (ecase (first expr)
+                    (and (every #'eval-expr (rest expr)))
+                    (or (some #'eval-expr (rest expr)))
+                    (not (not (eval-expr (second expr)))))))))
+      (eval-expr expr))))
 
 (defun test-selected-by-marks-p (name)
   (eval-mark-expr *mark-expr* (test-marks name)))
