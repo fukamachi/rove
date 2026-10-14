@@ -5,6 +5,7 @@
   (:use-reexport #:rove/core/test)
   (:use-reexport #:rove/core/suite)
   (:use-reexport #:rove/core/result)
+  (:use-reexport #:rove/core/fixture)
   (:use-reexport #:rove/reporter)
   (:import-from #:rove/core/suite
                 #:run-system-tests)
@@ -15,6 +16,8 @@
   (:import-from #:rove/core/marks
                 #:*mark-expr*
                 #:normalize-mark-expr)
+  (:import-from #:rove/core/fixture
+                #:with-fixture-session)
   (:import-from #:rove/core/stats
                 #:plan)
   (:import-from #:rove/misc/color
@@ -71,10 +74,11 @@
 (defmethod run-test (test-name &key (style :spec))
   (let ((test (ensure-test test-name)))
     (with-reporter style
-      (let ((result (testing nil
-                      (funcall test))))
-        (values (passedp rove/core/stats:*stats*)
-                result)))))
+      (with-fixture-session ()
+        (let ((result (testing nil
+                        (funcall test))))
+          (values (passedp rove/core/stats:*stats*)
+                  result))))))
 
 (defmethod run-tests (test-names &key (style :spec))
   (let ((tests (mapcar #'ensure-test test-names)))
@@ -84,7 +88,8 @@
 (defgeneric run-suite (suite &key style)
   (:method (suite &key (style :spec))
     (with-reporter style
-      (run-suite-tests suite))))
+      (with-fixture-session ()
+        (run-suite-tests suite)))))
 
 (defmethod run (target &key (style *default-reporter*) (env *default-env*)
                             marks shard shards)

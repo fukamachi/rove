@@ -16,6 +16,8 @@
                 #:find-suite
                 #:*before-test-hooks*
                 #:*after-test-hooks*)
+  (:import-from #:rove/core/fixture
+                #:with-fixture-session)
   (:import-from #:rove/core/suite/file
                 #:system-packages)
   (:export #:run-suite-tests
@@ -79,10 +81,11 @@
                             *error-output*)))
     (initialize *stats*)
 
-    (handler-case
-        (funcall function)
-      (quit-early ()
-        (format *error-output* "~&Failed test, with the abort option enabled. ~%")))
+    (with-fixture-session ()
+      (handler-case
+          (funcall function)
+        (quit-early ()
+          (format *error-output* "~&Failed test, with the abort option enabled. ~%"))))
 
     (summarize *stats*)
 
