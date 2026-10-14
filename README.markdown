@@ -62,6 +62,8 @@ $ ros install rove
 ;-> × 0) Expect (= A 0) to be true.
 ```
 
+Failed `ok` assertions on a two-argument `equal` / `equalp` / `string=` / `string-equal` / `eql` / `=` also print the first argument as expected and the second as actual (multi-line strings as a line diff). Values are printed with `*print-length*` / `*print-level*` limited to `rove/core/diff:*diff-print-length*` / `*diff-print-level*` unless you bind them yourself.
+
 ### ng (form &optional description)
 
 ```common-lisp
@@ -194,17 +196,21 @@ Evaluates before/after running a each test in the package.
   ...)
 ```
 
-### run (package &key style env marks shard shards)
+### run (package &key style env marks shard shards junit-file)
 
 ```common-lisp
 (run :myapp/tests)                              ; Defaults to spec-style output.
 (run :myapp/tests :style :spec)                 ; Detailed test output.
 (run :myapp/tests :style :dot)                  ; One-dot-per-test output.
 (run :myapp/tests :style :none)                 ; Minimal test output with filenames only.
+(run :myapp/tests :style :junit)                ; JUnit XML on standard output.
+(run :myapp/tests :junit-file #p"report.xml")   ; Spec output, plus a JUnit XML file.
 (run :myapp/tests :marks '(not :slow))
 (run :myapp/tests :shard 0 :shards 4)
 (run :myapp/tests :env '(("APP_ENV" . "test")))
 ```
+
+`:junit-file` writes a JUnit XML report (one `<testsuite>` per package, one `<testcase>` per `deftest`, nested `testing` blocks folded into their test) in addition to whatever `:style` prints; `:style :junit` prints that XML instead of the spec output.
 
 `:shard` / `:shards` split the selected tests across CI jobs. Each test is assigned to a shard by a hash of its name, so the split is stable across runs and balanced across suites. `shard` must be an integer with `0 <= shard < shards` (convert 1-based CI indices yourself). Suites with no selected tests are skipped entirely, including `setup` / `teardown`.
 

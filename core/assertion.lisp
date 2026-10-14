@@ -4,6 +4,8 @@
         #:rove/core/stats
         #:rove/core/result)
   (:shadow #:continue)
+  (:import-from #:rove/core/diff
+                #:maybe-value-diff)
   (:import-from #:dissect
                 #:stack)
   (:export #:*debug-on-error*
@@ -72,28 +74,38 @@
                        *fail*
                        (apply #',(first form) ,result))
                    ,args-symbols
-                   ,args-values))
-        `(values ,form nil nil))))
+                   ,args-values
+                   ,result))
+        `(values ,form nil nil nil))))
 
-(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc class-fn positive source-location)
-  (let ((assertion
-          (make-instance (funcall class-fn
-                                  (if (eq result *fail*)
-                                      (not positive)
-                                      (not (null result)))
-                                  reason)
-                         :form form
-                         :steps steps
-                         :args args-symbols
-                         :values args-values
-                         :reason reason
-                         :desc desc
-                         :duration duration
-                         :stacks stacks
-                         :labels (and *stats*
-                                      (stats-context-labels *stats*))
-                         :negative (not positive)
-                         :source-location source-location)))
+(defun %okng-record (form result args-symbols args-values steps stacks reason duration desc class-fn positive source-location
+                     &key arg-values)
+  "ARG-VALUES are the values of FORM's direct arguments, used for the
+expected/actual diff of failed positive comparisons."
+  (let* ((class (funcall class-fn
+                         (if (eq result *fail*)
+                             (not positive)
+                             (not (null result)))
+                         reason))
+         (assertion
+           (make-instance class
+                          :form form
+                          :steps steps
+                          :args args-symbols
+                          :values args-values
+                          :reason reason
+                          :desc desc
+                          :duration duration
+                          :stacks stacks
+                          :labels (and *stats*
+                                       (stats-context-labels *stats*))
+                          :negative (not positive)
+                          :source-location source-location
+                          :diff (when (and positive
+                                           (subtypep class 'failed)
+                                           (not (eq result *fail*))
+                                           (not (find *fail* arg-values :test 'eq)))
+                                  (maybe-value-diff form arg-values)))))
     (record *stats* assertion)
     result))
 
@@ -122,6 +134,7 @@
          (result (gensym "RESULT"))
          (args-symbols (gensym "ARGS-SYMBOLS"))
          (args-values (gensym "ARGS-VALUES"))
+         (arg-values (gensym "ARG-VALUES"))
          (steps (gensym "STEPS"))
          (e (gensym "E"))
          (start (gensym "START"))
@@ -143,7 +156,7 @@
                        (record-error ,form ,steps ,e (calc-duration ,start) ,desc ,class-fn ,positive ,source-location)
                        (unless (debug-on-error-p)
                          (return-from ,block-label *fail*)))))
-           (multiple-value-bind (,result ,args-symbols ,args-values)
+           (multiple-value-bind (,result ,args-symbols ,args-values ,arg-values)
                (form-inspect ,expanded-form)
              (%okng-record ,form
                            ,result ,args-symbols ,args-values
@@ -154,7 +167,8 @@
                            ,desc
                            ,class-fn
                            ,positive
-                           ,source-location)))))))
+                           ,source-location
+                           :arg-values ,arg-values)))))))
 
 (defun ok-assertion-class (result error)
   (declare (ignore error))

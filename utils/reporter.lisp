@@ -112,6 +112,9 @@
                               stream)
                              (fresh-line stream))
                            (with-indent (stream +2)
+                             (when (assertion-diff f)
+                               (princ (color-text :yellow (assertion-diff f)) stream)
+                               (fresh-line stream))
                              (princ
                               (color-text :gray (prin1-to-string f))
                               stream)

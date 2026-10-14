@@ -20,6 +20,7 @@
            #:assertion-labels
            #:assertion-description
            #:assertion-source-location
+           #:assertion-diff
            #:dump-details
 
            #:test
@@ -74,7 +75,10 @@
              :initform nil)
    (source-location :initarg :source-location
                     :initform nil
-                    :reader assertion-source-location)))
+                    :reader assertion-source-location)
+   (diff :initarg :diff
+         :initform nil
+         :reader assertion-diff)))
 
 (defmethod print-object ((assertion assertion) stream)
   (if *print-assertion*
