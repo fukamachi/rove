@@ -134,6 +134,35 @@ $ ros install rove
 
 `:timeout` records a failed assertion when the test body exceeds that many seconds. `*default-test-timeout*` sets a global default (`nil` = no timeout). It is meant for detecting hangs: the body is interrupted asynchronously, so state after a timeout (e.g. an unfinished `unwind-protect` cleanup) isn't guaranteed to be clean.
 
+### deftest-parametrize (name bindings &body body)
+
+Define one `deftest` per parameter row. Useful when the same assertions should run against many input vectors.
+
+```common-lisp
+(deftest-parametrize add
+    ((a b expected)
+     (1 2 3)
+     (0 0 0)
+     (-1 1 0))
+  (ok (= (+ a b) expected)))
+;; registers ADD/0, ADD/1, ADD/2
+
+(deftest-parametrize doubles
+    ((n expected) :ids ("two" "four")
+     (1 2)
+     (2 4))
+  (ok (= (* n 2) expected)))
+;; registers DOUBLES/TWO, DOUBLES/FOUR
+
+;; Table from a load-time form:
+(defparameter *cases* '((1 2 3) (4 5 9)))
+(deftest-parametrize add-dyn
+    ((a b expected) :rows *cases*)
+  (ok (= (+ a b) expected)))
+```
+
+`parametrize-test-name` builds the per-row symbol (`NAME/0` or `NAME/ID`). Ids must be unique after upcasing; a literal `:ids (...)` list is data in both forms, any other `:ids` form is evaluated alongside `:rows`. Malformed tables (arity mismatch, duplicate ids or variables, unknown options) are rejected at macroexpansion. Redefining `NAME` with fewer rows unregisters the rows that disappeared.
+
 ### testing (description &body body)
 
 ```common-lisp
