@@ -37,6 +37,22 @@
     (rove:failing "Empty block"
       nil)))
 
+(defun system-packages-finds-a-package-recorded-under-its-fasl ()
+  ;; What RESOLVE-FILE records when it cannot map a fasl back to its source
+  ;; file: the fasl's own pathname with the source type.
+  (let* ((component (first (asdf:component-children
+                            (asdf:find-system "rove/tests/marks"))))
+         (fasl (first (asdf:output-files (asdf:make-operation 'asdf:compile-op)
+                                         component)))
+         (package (find-package :rove/tests/marks))
+         (rove/core/suite/file::*file-package* (make-hash-table :test 'equal)))
+    (setf (rove/core/suite/file:file-package (uiop:lispize-pathname fasl))
+          package)
+    (assert (equal (list package)
+                   (rove/core/suite/file::system-packages
+                    (asdf:find-system "rove/tests"))))))
+
 (defun run-all-tests ()
   (testing-returns-the-body-result)
+  (system-packages-finds-a-package-recorded-under-its-fasl)
   (assert (rove:run :rove/tests/marks)))
