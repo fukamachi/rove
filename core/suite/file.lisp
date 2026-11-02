@@ -122,7 +122,7 @@ translations may be reconfigured during an interactive session."
 
 (defun component-source-files (component)
   (typecase component
-    (asdf:cl-source-file (list (asdf:component-pathname component)))
+    (asdf:cl-source-file (list component))
     ((or asdf:module
          asdf:system)
      (mapcan #'component-source-files
@@ -145,16 +145,19 @@ translations may be reconfigured during an interactive session."
 
 (defun package-inferred-system-files (system)
   (mapcar (lambda (name)
-            (let ((system (asdf:find-system name)))
-              (asdf:component-pathname
-               (first (asdf:component-children system)))))
+            (first (asdf:component-children (asdf:find-system name))))
           (package-inferred-system-component-names system)))
 
-(defun system-files (system)
+(defun system-source-files (system)
+  "The CL-SOURCE-FILE components of SYSTEM, or of its subsystems if it is a
+package-inferred system."
   (etypecase system
     (asdf:package-inferred-system
      (package-inferred-system-files system))
     (asdf:system (component-source-files system))))
+
+(defun system-files (system)
+  (mapcar #'asdf:component-pathname (system-source-files system)))
 
 (defvar *file-package*
   (make-hash-table :test 'equal))
@@ -169,11 +172,20 @@ translations may be reconfigured during an interactive session."
 (defun (setf file-package) (package file)
   (setf (gethash (uiop:native-namestring file) *file-package*) package))
 
+(defun source-file-package (component)
+  "The package MAKE-NEW-SUITE recorded for the source file COMPONENT.
+That is under the file's own pathname, or, when RESOLVE-FILE could not map
+the fasl it loaded back to the file, under the fasl's pathname with the
+source type, as RESOLVE-FILE leaves it.  ASDF names that fasl whatever the
+output translations, including ones that map each system to a directory of
+its own (as GNU Guix's do), which RESOLVE-FILE's single cache root cannot."
+  (or (file-package (asdf:component-pathname component) nil)
+      (some (lambda (output)
+              (file-package (uiop:lispize-pathname output) nil))
+            (asdf:output-files (asdf:make-operation 'asdf:compile-op)
+                               component))))
+
 (defun system-packages (system)
-  (let ((files (system-files system)))
-    (remove-duplicates
-     (remove nil
-             (mapcar (lambda (file)
-                       (file-package file nil))
-                     files))
-     :from-end t)))
+  (remove-duplicates
+   (remove nil (mapcar #'source-file-package (system-source-files system)))
+   :from-end t))
